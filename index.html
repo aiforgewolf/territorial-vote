@@ -196,6 +196,67 @@
             color: white;
         }
 
+        .threshold-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .threshold-section label {
+            color: #a0a0a0;
+            font-weight: 500;
+        }
+
+        .threshold-section input {
+            width: 80px;
+            padding: 8px 12px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        .threshold-section input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .threshold-section span {
+            color: #fff;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-qualified {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-below {
+            background: #dc3545;
+            color: white;
+        }
+
+        .row-below-threshold {
+            opacity: 0.5;
+        }
+
+        .row-below-threshold .percentage-fill {
+            background: linear-gradient(90deg, #6c757d, #888);
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -259,6 +320,12 @@
                 </div>
             </div>
 
+            <div class="threshold-section">
+                <label for="threshold">Parliament Threshold:</label>
+                <input type="number" id="threshold" value="5" min="0" max="100" step="0.1" onchange="updateThreshold()">
+                <span>%</span>
+            </div>
+
             <div id="resultsContainer">
                 <div class="empty-state">
                     <p>No entries yet. Add countries and their votes above.</p>
@@ -271,9 +338,10 @@
         const STORAGE_KEY = 'electionCalculatorData';
         let entries = [];
         let entryId = 0;
+        let threshold = 5;
 
         function saveToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries, entryId }));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries, entryId, threshold }));
         }
 
         function loadFromStorage() {
@@ -282,7 +350,14 @@
                 const parsed = JSON.parse(data);
                 entries = parsed.entries || [];
                 entryId = parsed.entryId || 0;
+                threshold = parsed.threshold !== undefined ? parsed.threshold : 5;
+                document.getElementById('threshold').value = threshold;
             }
+        }
+
+        function updateThreshold() {
+            threshold = parseFloat(document.getElementById('threshold').value) || 0;
+            renderResults();
         }
 
         function addEntry() {
@@ -363,6 +438,7 @@
                             <th>Country</th>
                             <th>Votes</th>
                             <th>Percentage</th>
+                            <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -371,8 +447,14 @@
 
             sortedEntries.forEach(entry => {
                 const percentage = calculatePercentage(entry.votes, totalVotes);
+                const meetsThreshold = percentage >= threshold;
+                const rowClass = meetsThreshold ? '' : 'row-below-threshold';
+                const statusBadge = meetsThreshold
+                    ? '<span class="status-badge status-qualified">Qualified</span>'
+                    : '<span class="status-badge status-below">Below</span>';
+
                 tableHTML += `
-                    <tr>
+                    <tr class="${rowClass}">
                         <td>${escapeHTML(entry.name)}</td>
                         <td>${formatNumber(entry.votes)}</td>
                         <td>
@@ -382,6 +464,7 @@
                                 </div>
                             </div>
                         </td>
+                        <td>${statusBadge}</td>
                         <td>
                             <button class="btn-remove" onclick="removeEntry(${entry.id})">Remove</button>
                         </td>
