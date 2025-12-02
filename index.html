@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Calculator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: #e94560;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .input-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #a0a0a0;
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            transition: border-color 0.3s;
+        }
+
+        .input-field input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-add {
+            background: #e94560;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .btn-clear {
+            background: #6c757d;
+            color: white;
+            margin-left: 10px;
+        }
+
+        .results-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-header h2 {
+            font-size: 1.5rem;
+            color: #e94560;
+        }
+
+        .total-votes {
+            font-size: 1.1rem;
+            color: #a0a0a0;
+        }
+
+        .total-votes span {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .results-table th {
+            color: #a0a0a0;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .results-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .percentage-bar {
+            width: 100%;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .percentage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            border-radius: 12px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            min-width: fit-content;
+        }
+
+        .percentage-text {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-remove {
+            background: transparent;
+            border: 1px solid #e94560;
+            color: #e94560;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-remove:hover {
+            background: #e94560;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #a0a0a0;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            .btn-clear {
+                margin-left: 0;
+            }
+
+            .results-table th,
+            .results-table td {
+                padding: 10px 5px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Election Calculator</h1>
+
+        <div class="input-section">
+            <div class="input-group">
+                <div class="input-field">
+                    <label for="countryName">Country Name (Optional)</label>
+                    <input type="text" id="countryName" placeholder="e.g., United States">
+                </div>
+                <div class="input-field">
+                    <label for="countryVotes">Number of Votes *</label>
+                    <input type="number" id="countryVotes" placeholder="e.g., 1000000" min="0" required>
+                </div>
+                <button class="btn btn-add" onclick="addEntry()">Add Entry</button>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <div class="results-header">
+                <h2>Results</h2>
+                <div>
+                    <span class="total-votes">Total Votes: <span id="totalVotes">0</span></span>
+                    <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+                </div>
+            </div>
+
+            <div id="resultsContainer">
+                <div class="empty-state">
+                    <p>No entries yet. Add countries and their votes above.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let entries = [];
+        let entryId = 0;
+
+        function addEntry() {
+            const nameInput = document.getElementById('countryName');
+            const votesInput = document.getElementById('countryVotes');
+
+            const votes = parseInt(votesInput.value);
+
+            if (isNaN(votes) || votes < 0) {
+                alert('Please enter a valid number of votes');
+                votesInput.focus();
+                return;
+            }
+
+            const name = nameInput.value.trim() || `Entry ${entryId + 1}`;
+
+            entries.push({
+                id: entryId++,
+                name: name,
+                votes: votes
+            });
+
+            // Clear inputs
+            nameInput.value = '';
+            votesInput.value = '';
+            nameInput.focus();
+
+            renderResults();
+        }
+
+        function removeEntry(id) {
+            entries = entries.filter(entry => entry.id !== id);
+            renderResults();
+        }
+
+        function clearAll() {
+            if (entries.length === 0) return;
+            if (confirm('Are you sure you want to clear all entries?')) {
+                entries = [];
+                entryId = 0;
+                renderResults();
+            }
+        }
+
+        function calculatePercentage(votes, total) {
+            if (total === 0) return 0;
+            return (votes / total) * 100;
+        }
+
+        function formatNumber(num) {
+            return num.toLocaleString();
+        }
+
+        function renderResults() {
+            const container = document.getElementById('resultsContainer');
+            const totalVotesSpan = document.getElementById('totalVotes');
+
+            const totalVotes = entries.reduce((sum, entry) => sum + entry.votes, 0);
+            totalVotesSpan.textContent = formatNumber(totalVotes);
+
+            if (entries.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No entries yet. Add countries and their votes above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by votes descending
+            const sortedEntries = [...entries].sort((a, b) => b.votes - a.votes);
+
+            let tableHTML = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Country</th>
+                            <th>Votes</th>
+                            <th>Percentage</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sortedEntries.forEach(entry => {
+                const percentage = calculatePercentage(entry.votes, totalVotes);
+                tableHTML += `
+                    <tr>
+                        <td>${escapeHTML(entry.name)}</td>
+                        <td>${formatNumber(entry.votes)}</td>
+                        <td>
+                            <div class="percentage-bar">
+                                <div class="percentage-fill" style="width: ${Math.max(percentage, 8)}%">
+                                    <span class="percentage-text">${percentage.toFixed(2)}%</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn-remove" onclick="removeEntry(${entry.id})">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+            container.innerHTML = tableHTML;
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to add entry
+        document.getElementById('countryVotes').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addEntry();
+            }
+        });
+
+        document.getElementById('countryName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('countryVotes').focus();
+            }
+        });
+    </script>
+</body>
+</html>
