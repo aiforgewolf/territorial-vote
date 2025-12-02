@@ -268,8 +268,22 @@
     </div>
 
     <script>
+        const STORAGE_KEY = 'electionCalculatorData';
         let entries = [];
         let entryId = 0;
+
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries, entryId }));
+        }
+
+        function loadFromStorage() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                const parsed = JSON.parse(data);
+                entries = parsed.entries || [];
+                entryId = parsed.entryId || 0;
+            }
+        }
 
         function addEntry() {
             const nameInput = document.getElementById('countryName');
@@ -335,6 +349,7 @@
                         <p>No entries yet. Add countries and their votes above.</p>
                     </div>
                 `;
+                saveToStorage();
                 return;
             }
 
@@ -376,6 +391,8 @@
 
             tableHTML += '</tbody></table>';
             container.innerHTML = tableHTML;
+
+            saveToStorage();
         }
 
         function escapeHTML(str) {
@@ -396,6 +413,10 @@
                 document.getElementById('countryVotes').focus();
             }
         });
+
+        // Initialize: load saved data and render
+        loadFromStorage();
+        renderResults();
     </script>
 </body>
 </html>
