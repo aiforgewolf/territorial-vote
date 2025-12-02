@@ -544,7 +544,7 @@
             const remainingCountries = totalCountries > 0 ? Math.max(0, totalCountries - entries.length) : 0;
             const minVotes = Math.min(...entries.map(e => e.votes));
             const entriesCount = entries.length;
-            const maxVotes = minVotes * entriesCount;
+            const maxVotes = (minVotes * remainingCountries) + totalVotes;
 
             // Render stats
             statsContainer.style.display = 'grid';
@@ -563,7 +563,7 @@
                 </div>
                 <div class="stat-card info">
                     <div class="stat-value">${formatNumber(maxVotes)}</div>
-                    <div class="stat-label">Max Votes (Min × Entered)</div>
+                    <div class="stat-label">Max Votes (Min × Remaining + Total)</div>
                 </div>
             `;
 
@@ -577,6 +577,7 @@
                             <th>Country</th>
                             <th>Votes</th>
                             <th>Percentage</th>
+                            <th>Min %</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -586,11 +587,14 @@
 
             sortedEntries.forEach(entry => {
                 const percentage = calculatePercentage(entry.votes, totalVotes);
+                const minPercentage = calculatePercentage(entry.votes, maxVotes);
                 const meetsThreshold = percentage >= threshold;
+                const minMeetsThreshold = minPercentage >= threshold;
                 const rowClass = meetsThreshold ? '' : 'row-below-threshold';
                 const statusBadge = meetsThreshold
                     ? '<span class="status-badge status-qualified">Qualified</span>'
                     : '<span class="status-badge status-below">Below</span>';
+                const minPercentageClass = minMeetsThreshold ? 'color: #28a745;' : 'color: #dc3545;';
 
                 tableHTML += `
                     <tr class="${rowClass}">
@@ -603,6 +607,7 @@
                                 </div>
                             </div>
                         </td>
+                        <td style="${minPercentageClass} font-weight: 600;">${minPercentage.toFixed(2)}%</td>
                         <td>${statusBadge}</td>
                         <td>
                             <button class="btn-remove" onclick="removeEntry(${entry.id})">Remove</button>
