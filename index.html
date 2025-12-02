@@ -254,6 +254,39 @@
             color: white;
         }
 
+        .position-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .position-hard-left {
+            background: #8b0000;
+            color: white;
+        }
+
+        .position-left {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .position-middle {
+            background: #f39c12;
+            color: white;
+        }
+
+        .position-right {
+            background: #3498db;
+            color: white;
+        }
+
+        .position-hard-right {
+            background: #1a237e;
+            color: white;
+        }
+
         .row-below-threshold {
             opacity: 0.5;
         }
@@ -1399,6 +1432,28 @@
             updateCoalition();
         }
 
+        function getPoliticalPosition(name) {
+            // Bonbon is always Hard Right Wing
+            if (name.toLowerCase() === 'bonbon') {
+                return 'Hard Right Wing';
+            }
+
+            // Random assignment for others
+            const positions = ['Hard Left Wing', 'Left Wing', 'Middle', 'Right Wing', 'Hard Right Wing'];
+            return positions[Math.floor(Math.random() * positions.length)];
+        }
+
+        function getPositionClass(position) {
+            switch (position) {
+                case 'Hard Left Wing': return 'position-hard-left';
+                case 'Left Wing': return 'position-left';
+                case 'Middle': return 'position-middle';
+                case 'Right Wing': return 'position-right';
+                case 'Hard Right Wing': return 'position-hard-right';
+                default: return 'position-middle';
+            }
+        }
+
         function addEntry() {
             const nameInput = document.getElementById('countryName');
             const votesInput = document.getElementById('countryVotes');
@@ -1412,11 +1467,13 @@
             }
 
             const name = nameInput.value.trim() || `Entry ${entryId + 1}`;
+            const position = getPoliticalPosition(name);
 
             entries.push({
                 id: entryId++,
                 name: name,
-                votes: votes
+                votes: votes,
+                position: position
             });
 
             // Clear inputs
@@ -1520,6 +1577,7 @@
                     <thead>
                         <tr>
                             <th>Country</th>
+                            <th>Position</th>
                             <th>Votes</th>
                             <th>Percentage</th>
                             <th>Min %</th>
@@ -1540,10 +1598,13 @@
                     ? '<span class="status-badge status-qualified">Qualified</span>'
                     : '<span class="status-badge status-below">Below</span>';
                 const minPercentageClass = minMeetsThreshold ? 'color: #28a745;' : 'color: #dc3545;';
+                const positionClass = getPositionClass(entry.position || 'Middle');
+                const positionBadge = `<span class="position-badge ${positionClass}">${entry.position || 'Unknown'}</span>`;
 
                 tableHTML += `
                     <tr class="${rowClass}">
                         <td>${escapeHTML(entry.name)}</td>
+                        <td>${positionBadge}</td>
                         <td>${formatNumber(entry.votes)}</td>
                         <td>
                             <div class="percentage-bar">
@@ -1582,7 +1643,7 @@
             const maxVotes = (minVotes * remainingCountries) + totalVotes;
 
             // CSV header
-            const headers = ['Country', 'Votes', 'Percentage', 'Min Percentage', 'Status'];
+            const headers = ['Country', 'Position', 'Votes', 'Percentage', 'Min Percentage', 'Status'];
 
             // Sort entries by votes descending
             const sortedEntries = [...entries].sort((a, b) => b.votes - a.votes);
@@ -1600,6 +1661,7 @@
 
                 return [
                     escapedName,
+                    entry.position || 'Unknown',
                     entry.votes,
                     percentage.toFixed(2) + '%',
                     minPercentage.toFixed(2) + '%',
