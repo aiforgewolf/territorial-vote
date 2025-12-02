@@ -526,6 +526,150 @@
             color: #e94560;
         }
 
+        /* Coalition Builder Styles */
+        .coalition-builder {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+
+        .coalition-builder.has-majority {
+            border-color: #28a745;
+        }
+
+        .coalition-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .coalition-header h3 {
+            color: #e94560;
+            font-size: 1.2rem;
+        }
+
+        .coalition-stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .coalition-seats {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .coalition-seats.majority {
+            color: #28a745;
+        }
+
+        .coalition-seats.minority {
+            color: #ffc107;
+        }
+
+        .majority-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .minority-badge {
+            background: #ffc107;
+            color: #333;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .coalition-parties {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 40px;
+            align-items: center;
+        }
+
+        .coalition-party-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .coalition-party-tag .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .coalition-empty {
+            color: #a0a0a0;
+            font-style: italic;
+        }
+
+        .party-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .party-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .party-card.selected {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.15);
+        }
+
+        .party-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid #a0a0a0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .party-card.selected .party-checkbox {
+            background: #28a745;
+            border-color: #28a745;
+        }
+
+        .party-checkbox::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .party-card.selected .party-checkbox::after {
+            opacity: 1;
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -622,6 +766,19 @@
                     (Slightly favors larger parties while remaining proportional)
                 </div>
 
+                <div id="coalitionBuilder" class="coalition-builder">
+                    <div class="coalition-header">
+                        <h3>Coalition Builder</h3>
+                        <div class="coalition-stats">
+                            <span class="coalition-seats" id="coalitionSeats">0 / <span id="majorityNeeded">101</span> seats</span>
+                            <span id="coalitionBadge"></span>
+                        </div>
+                    </div>
+                    <div class="coalition-parties" id="coalitionParties">
+                        <span class="coalition-empty">Click on parties below to form a coalition</span>
+                    </div>
+                </div>
+
                 <div id="seatsBar" class="seats-bar"></div>
 
                 <div id="parliamentVisual" class="parliament-visual">
@@ -653,6 +810,8 @@
         let threshold = 5;
         let totalCountries = 0;
         let parliamentSeats = 200;
+        let selectedParties = new Set();
+        let currentAllocation = [];
 
         // Party colors for visualization
         const partyColors = [
@@ -698,12 +857,86 @@
         function showParliament() {
             document.getElementById('electionScreen').classList.add('hidden');
             document.getElementById('parliamentScreen').classList.add('active');
+            selectedParties.clear();
             renderParliament();
         }
 
         function showElection() {
             document.getElementById('electionScreen').classList.remove('hidden');
             document.getElementById('parliamentScreen').classList.remove('active');
+        }
+
+        function toggleParty(partyId) {
+            if (selectedParties.has(partyId)) {
+                selectedParties.delete(partyId);
+            } else {
+                selectedParties.add(partyId);
+            }
+            updateCoalition();
+            updatePartyCards();
+        }
+
+        function updateCoalition() {
+            const coalitionSeatsEl = document.getElementById('coalitionSeats');
+            const coalitionBadge = document.getElementById('coalitionBadge');
+            const coalitionParties = document.getElementById('coalitionParties');
+            const coalitionBuilder = document.getElementById('coalitionBuilder');
+            const majorityNeeded = Math.floor(parliamentSeats / 2) + 1;
+
+            document.getElementById('majorityNeeded').textContent = majorityNeeded;
+
+            let totalCoalitionSeats = 0;
+            const selectedPartiesData = [];
+
+            currentAllocation.forEach(party => {
+                if (selectedParties.has(party.id)) {
+                    totalCoalitionSeats += party.seats;
+                    selectedPartiesData.push(party);
+                }
+            });
+
+            const hasMajority = totalCoalitionSeats >= majorityNeeded;
+
+            // Update seats display
+            coalitionSeatsEl.innerHTML = `${totalCoalitionSeats} / <span id="majorityNeeded">${majorityNeeded}</span> seats`;
+            coalitionSeatsEl.className = `coalition-seats ${hasMajority ? 'majority' : 'minority'}`;
+
+            // Update badge
+            if (selectedPartiesData.length === 0) {
+                coalitionBadge.innerHTML = '';
+            } else if (hasMajority) {
+                coalitionBadge.innerHTML = '<span class="majority-badge">MAJORITY</span>';
+            } else {
+                coalitionBadge.innerHTML = '<span class="minority-badge">MINORITY</span>';
+            }
+
+            // Update coalition builder border
+            coalitionBuilder.className = `coalition-builder ${hasMajority ? 'has-majority' : ''}`;
+
+            // Update parties list
+            if (selectedPartiesData.length === 0) {
+                coalitionParties.innerHTML = '<span class="coalition-empty">Click on parties below to form a coalition</span>';
+            } else {
+                coalitionParties.innerHTML = selectedPartiesData.map(party => `
+                    <span class="coalition-party-tag">
+                        <span class="dot" style="background: ${party.color};"></span>
+                        ${escapeHTML(party.name)} (${party.seats})
+                    </span>
+                `).join('');
+            }
+        }
+
+        function updatePartyCards() {
+            currentAllocation.forEach(party => {
+                const card = document.getElementById(`party-card-${party.id}`);
+                if (card) {
+                    if (selectedParties.has(party.id)) {
+                        card.classList.add('selected');
+                    } else {
+                        card.classList.remove('selected');
+                    }
+                }
+            });
         }
 
         // Modified Sainte-Laguë method
@@ -748,6 +981,7 @@
             }
 
             const allocation = allocateSeats(qualifiedParties, parliamentSeats);
+            currentAllocation = allocation;
 
             // Render seats bar
             const seatsBar = document.getElementById('seatsBar');
@@ -767,13 +1001,15 @@
             });
             hemicycle.innerHTML = seatsHTML;
 
-            // Render party cards
+            // Render party cards with checkboxes
             const summary = document.getElementById('parliamentSummary');
             summary.innerHTML = allocation.map(party => {
                 const votePercent = calculatePercentage(party.votes, totalVotes);
                 const seatPercent = calculatePercentage(party.seats, parliamentSeats);
+                const isSelected = selectedParties.has(party.id);
                 return `
-                    <div class="party-card">
+                    <div class="party-card ${isSelected ? 'selected' : ''}" id="party-card-${party.id}" onclick="toggleParty(${party.id})">
+                        <div class="party-checkbox"></div>
                         <div class="party-color" style="background: ${party.color};"></div>
                         <div class="party-info">
                             <div class="party-name">${escapeHTML(party.name)}</div>
@@ -800,6 +1036,9 @@
                     </tr>
                 `;
             }).join('');
+
+            // Update coalition display
+            updateCoalition();
         }
 
         function addEntry() {
