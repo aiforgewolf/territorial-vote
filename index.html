@@ -1189,8 +1189,8 @@
             const governmentGrid = document.getElementById('governmentGrid');
             const governmentSummary = document.getElementById('governmentSummary');
 
-            // Only show if there's a majority coalition
-            if (!hasMajority || coalitionParties.length === 0) {
+            // Only show if at least one party is selected
+            if (coalitionParties.length === 0) {
                 governmentSection.classList.remove('active');
                 return;
             }
