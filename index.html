@@ -1127,6 +1127,7 @@
 
             // Render stats
             statsContainer.style.display = 'grid';
+            const thresholdVotes = Math.ceil(totalVotes * (threshold / 100));
             statsContainer.innerHTML = `
                 <div class="stat-card qualified">
                     <div class="stat-value">${qualifiedCount}</div>
@@ -1135,6 +1136,10 @@
                 <div class="stat-card below">
                     <div class="stat-value">${belowCount}</div>
                     <div class="stat-label">Below Threshold</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-value">${formatNumber(thresholdVotes)}</div>
+                    <div class="stat-label">${threshold}% Threshold (votes needed)</div>
                 </div>
                 <div class="stat-card info">
                     <div class="stat-value">${entries.length}${totalCountries > 0 ? ' / ' + totalCountries : ''}</div>
