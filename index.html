@@ -295,6 +295,57 @@
             color: #17a2b8;
         }
 
+        .settings-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .settings-section h3 {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .settings-group {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-item label {
+            color: #a0a0a0;
+            font-weight: 500;
+        }
+
+        .settings-item input {
+            width: 100px;
+            padding: 8px 12px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        .settings-item input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .settings-item span {
+            color: #fff;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -335,6 +386,21 @@
     <div class="container">
         <h1>Election Calculator</h1>
 
+        <div class="settings-section">
+            <h3>Settings</h3>
+            <div class="settings-group">
+                <div class="settings-item">
+                    <label for="totalCountries">Total Countries:</label>
+                    <input type="number" id="totalCountries" value="0" min="0" onchange="updateTotalCountries()">
+                </div>
+                <div class="settings-item">
+                    <label for="threshold">Parliament Threshold:</label>
+                    <input type="number" id="threshold" value="5" min="0" max="100" step="0.1" onchange="updateThreshold()">
+                    <span>%</span>
+                </div>
+            </div>
+        </div>
+
         <div class="input-section">
             <div class="input-group">
                 <div class="input-field">
@@ -356,15 +422,6 @@
                     <span class="total-votes">Total Votes: <span id="totalVotes">0</span></span>
                     <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
                 </div>
-            </div>
-
-            <div class="threshold-section">
-                <label for="threshold">Parliament Threshold:</label>
-                <input type="number" id="threshold" value="5" min="0" max="100" step="0.1" onchange="updateThreshold()">
-                <span>%</span>
-                <span style="margin-left: 20px;"></span>
-                <label for="totalCountries">Total Countries:</label>
-                <input type="number" id="totalCountries" value="0" min="0" onchange="updateTotalCountries()">
             </div>
 
             <div id="statsContainer" class="stats-section" style="display: none;"></div>
