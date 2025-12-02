@@ -22,6 +22,11 @@
         .container {
             max-width: 800px;
             margin: 0 auto;
+            transition: max-width 0.3s ease;
+        }
+
+        .container.wide {
+            max-width: 1200px;
         }
 
         h1 {
@@ -519,6 +524,90 @@
             transition: flex 0.5s ease;
         }
 
+        .method-selector {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .method-selector h4 {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .method-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .method-option {
+            flex: 1;
+            min-width: 280px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .method-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .method-option.selected {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .method-option h5 {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .method-option h5 .divisors {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            font-weight: normal;
+        }
+
+        .method-option p {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .method-radio {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #a0a0a0;
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .method-option.selected .method-radio {
+            border-color: #e94560;
+        }
+
+        .method-option.selected .method-radio::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: #e94560;
+            border-radius: 50%;
+        }
+
         .method-info {
             background: rgba(255, 255, 255, 0.05);
             padding: 15px 20px;
@@ -768,9 +857,26 @@
                     <button class="btn btn-back" onclick="showElection()">← Back to Results</button>
                 </div>
 
-                <div class="method-info">
-                    <strong>Modified Sainte-Laguë Method</strong> — Divisors: 1.4, 3, 5, 7, 9...
-                    (Slightly favors larger parties while remaining proportional)
+                <div class="method-selector">
+                    <h4>Allocation Method</h4>
+                    <div class="method-options">
+                        <div class="method-option selected" id="method-sainte-lague" onclick="selectMethod('sainte-lague')">
+                            <h5>
+                                <span class="method-radio"></span>
+                                Modified Sainte-Laguë
+                                <span class="divisors">(1.4, 3, 5, 7...)</span>
+                            </h5>
+                            <p>More proportional representation. Slightly favors larger parties while remaining fair to smaller ones. Good balance between proportionality and governability.</p>
+                        </div>
+                        <div class="method-option" id="method-dhondt" onclick="selectMethod('dhondt')">
+                            <h5>
+                                <span class="method-radio"></span>
+                                D'Hondt
+                                <span class="divisors">(1, 2, 3, 4...)</span>
+                            </h5>
+                            <p>Favors larger parties more strongly. Makes majority coalitions easier to form. Better for stable governments, less proportional for small parties.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="coalitionBuilder" class="coalition-builder">
@@ -819,6 +925,7 @@
         let parliamentSeats = 200;
         let selectedParties = new Set();
         let currentAllocation = [];
+        let allocationMethod = 'sainte-lague';
 
         // Party colors for visualization
         const partyColors = [
@@ -864,6 +971,7 @@
         function showParliament() {
             document.getElementById('electionScreen').classList.add('hidden');
             document.getElementById('parliamentScreen').classList.add('active');
+            document.querySelector('.container').classList.add('wide');
             selectedParties.clear();
             renderParliament();
         }
@@ -871,6 +979,19 @@
         function showElection() {
             document.getElementById('electionScreen').classList.remove('hidden');
             document.getElementById('parliamentScreen').classList.remove('active');
+            document.querySelector('.container').classList.remove('wide');
+        }
+
+        function selectMethod(method) {
+            allocationMethod = method;
+
+            // Update UI
+            document.querySelectorAll('.method-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`method-${method}`).classList.add('selected');
+
+            // Re-render parliament with new method
+            selectedParties.clear();
+            renderParliament();
         }
 
         function toggleParty(partyId) {
@@ -946,8 +1067,18 @@
             });
         }
 
-        // Modified Sainte-Laguë method
-        // Divisors: 1.4, 3, 5, 7, 9, 11...
+        // Get divisor based on allocation method
+        function getDivisor(seatsWon, method) {
+            if (method === 'dhondt') {
+                // D'Hondt: 1, 2, 3, 4, 5...
+                return seatsWon + 1;
+            } else {
+                // Modified Sainte-Laguë: 1.4, 3, 5, 7, 9...
+                return seatsWon === 0 ? 1.4 : (2 * seatsWon + 1);
+            }
+        }
+
+        // Seat allocation using selected method
         function allocateSeats(qualifiedParties, totalSeats) {
             const results = qualifiedParties.map((party, index) => ({
                 ...party,
@@ -960,8 +1091,7 @@
                 let winnerIndex = 0;
 
                 results.forEach((party, index) => {
-                    // Modified Sainte-Laguë divisor: 1.4 for first seat, then 3, 5, 7...
-                    const divisor = party.seats === 0 ? 1.4 : (2 * party.seats + 1);
+                    const divisor = getDivisor(party.seats, allocationMethod);
                     const quotient = party.votes / divisor;
 
                     if (quotient > maxQuotient) {
