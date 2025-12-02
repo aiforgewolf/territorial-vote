@@ -356,6 +356,176 @@
             font-size: 1.1rem;
         }
 
+        /* Parliament Screen Styles */
+        .parliament-screen {
+            display: none;
+        }
+
+        .parliament-screen.active {
+            display: block;
+        }
+
+        .election-screen.hidden {
+            display: none;
+        }
+
+        .btn-parliament {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            margin-left: 10px;
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+
+        .parliament-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .parliament-header h2 {
+            font-size: 1.8rem;
+            color: #e94560;
+        }
+
+        .parliament-visual {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .hemicycle {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 3px;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .seat {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .seat:hover {
+            transform: scale(1.5);
+        }
+
+        .parliament-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .party-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+
+        .party-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .party-color {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .party-info {
+            flex: 1;
+        }
+
+        .party-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .party-details {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .party-seats {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #e94560;
+        }
+
+        .allocation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .allocation-table th,
+        .allocation-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .allocation-table th {
+            color: #a0a0a0;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .allocation-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .seats-bar {
+            display: flex;
+            height: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .seats-bar-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: flex 0.5s ease;
+        }
+
+        .method-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+
+        .method-info strong {
+            color: #e94560;
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -398,6 +568,10 @@
                     <input type="number" id="threshold" value="5" min="0" max="100" step="0.1" onchange="updateThreshold()">
                     <span>%</span>
                 </div>
+                <div class="settings-item">
+                    <label for="parliamentSeats">Parliament Seats:</label>
+                    <input type="number" id="parliamentSeats" value="200" min="1" onchange="updateParliamentSeats()">
+                </div>
             </div>
         </div>
 
@@ -415,21 +589,59 @@
             </div>
         </div>
 
-        <div class="results-section">
-            <div class="results-header">
-                <h2>Results</h2>
-                <div>
-                    <span class="total-votes">Total Votes: <span id="totalVotes">0</span></span>
-                    <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+        <div id="electionScreen" class="election-screen">
+            <div class="results-section">
+                <div class="results-header">
+                    <h2>Results</h2>
+                    <div>
+                        <span class="total-votes">Total Votes: <span id="totalVotes">0</span></span>
+                        <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+                        <button id="formGovernmentBtn" class="btn btn-parliament" onclick="showParliament()" style="display: none;">Form Government</button>
+                    </div>
+                </div>
+
+                <div id="statsContainer" class="stats-section" style="display: none;"></div>
+
+                <div id="resultsContainer">
+                    <div class="empty-state">
+                        <p>No entries yet. Add countries and their votes above.</p>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div id="statsContainer" class="stats-section" style="display: none;"></div>
-
-            <div id="resultsContainer">
-                <div class="empty-state">
-                    <p>No entries yet. Add countries and their votes above.</p>
+        <div id="parliamentScreen" class="parliament-screen">
+            <div class="results-section">
+                <div class="parliament-header">
+                    <h2>Parliament Seat Allocation</h2>
+                    <button class="btn btn-back" onclick="showElection()">← Back to Results</button>
                 </div>
+
+                <div class="method-info">
+                    <strong>Modified Sainte-Laguë Method</strong> — Divisors: 1.4, 3, 5, 7, 9...
+                    (Slightly favors larger parties while remaining proportional)
+                </div>
+
+                <div id="seatsBar" class="seats-bar"></div>
+
+                <div id="parliamentVisual" class="parliament-visual">
+                    <div id="hemicycle" class="hemicycle"></div>
+                </div>
+
+                <div id="parliamentSummary" class="parliament-summary"></div>
+
+                <table class="allocation-table">
+                    <thead>
+                        <tr>
+                            <th>Party</th>
+                            <th>Votes</th>
+                            <th>Vote %</th>
+                            <th>Seats</th>
+                            <th>Seat %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allocationBody"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -440,9 +652,17 @@
         let entryId = 0;
         let threshold = 5;
         let totalCountries = 0;
+        let parliamentSeats = 200;
+
+        // Party colors for visualization
+        const partyColors = [
+            '#e94560', '#28a745', '#17a2b8', '#ffc107', '#6f42c1',
+            '#fd7e14', '#20c997', '#e83e8c', '#6610f2', '#007bff',
+            '#dc3545', '#28a745', '#17a2b8', '#ffc107', '#6c757d'
+        ];
 
         function saveToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries, entryId, threshold, totalCountries }));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries, entryId, threshold, totalCountries, parliamentSeats }));
         }
 
         function loadFromStorage() {
@@ -453,8 +673,10 @@
                 entryId = parsed.entryId || 0;
                 threshold = parsed.threshold !== undefined ? parsed.threshold : 5;
                 totalCountries = parsed.totalCountries || 0;
+                parliamentSeats = parsed.parliamentSeats || 200;
                 document.getElementById('threshold').value = threshold;
                 document.getElementById('totalCountries').value = totalCountries;
+                document.getElementById('parliamentSeats').value = parliamentSeats;
             }
         }
 
@@ -466,6 +688,118 @@
         function updateTotalCountries() {
             totalCountries = parseInt(document.getElementById('totalCountries').value) || 0;
             renderResults();
+        }
+
+        function updateParliamentSeats() {
+            parliamentSeats = parseInt(document.getElementById('parliamentSeats').value) || 200;
+            saveToStorage();
+        }
+
+        function showParliament() {
+            document.getElementById('electionScreen').classList.add('hidden');
+            document.getElementById('parliamentScreen').classList.add('active');
+            renderParliament();
+        }
+
+        function showElection() {
+            document.getElementById('electionScreen').classList.remove('hidden');
+            document.getElementById('parliamentScreen').classList.remove('active');
+        }
+
+        // Modified Sainte-Laguë method
+        // Divisors: 1.4, 3, 5, 7, 9, 11...
+        function allocateSeats(qualifiedParties, totalSeats) {
+            const results = qualifiedParties.map((party, index) => ({
+                ...party,
+                seats: 0,
+                color: partyColors[index % partyColors.length]
+            }));
+
+            for (let seat = 0; seat < totalSeats; seat++) {
+                let maxQuotient = -1;
+                let winnerIndex = 0;
+
+                results.forEach((party, index) => {
+                    // Modified Sainte-Laguë divisor: 1.4 for first seat, then 3, 5, 7...
+                    const divisor = party.seats === 0 ? 1.4 : (2 * party.seats + 1);
+                    const quotient = party.votes / divisor;
+
+                    if (quotient > maxQuotient) {
+                        maxQuotient = quotient;
+                        winnerIndex = index;
+                    }
+                });
+
+                results[winnerIndex].seats++;
+            }
+
+            return results.sort((a, b) => b.seats - a.seats);
+        }
+
+        function renderParliament() {
+            const totalVotes = entries.reduce((sum, e) => sum + e.votes, 0);
+            const qualifiedParties = entries
+                .filter(e => calculatePercentage(e.votes, totalVotes) >= threshold)
+                .sort((a, b) => b.votes - a.votes);
+
+            if (qualifiedParties.length === 0) {
+                showElection();
+                return;
+            }
+
+            const allocation = allocateSeats(qualifiedParties, parliamentSeats);
+
+            // Render seats bar
+            const seatsBar = document.getElementById('seatsBar');
+            seatsBar.innerHTML = allocation.map(party =>
+                `<div class="seats-bar-segment" style="flex: ${party.seats}; background: ${party.color};" title="${escapeHTML(party.name)}: ${party.seats} seats">
+                    ${party.seats >= 10 ? party.seats : ''}
+                </div>`
+            ).join('');
+
+            // Render hemicycle (visual representation)
+            const hemicycle = document.getElementById('hemicycle');
+            let seatsHTML = '';
+            allocation.forEach(party => {
+                for (let i = 0; i < party.seats; i++) {
+                    seatsHTML += `<div class="seat" style="background: ${party.color};" title="${escapeHTML(party.name)}"></div>`;
+                }
+            });
+            hemicycle.innerHTML = seatsHTML;
+
+            // Render party cards
+            const summary = document.getElementById('parliamentSummary');
+            summary.innerHTML = allocation.map(party => {
+                const votePercent = calculatePercentage(party.votes, totalVotes);
+                const seatPercent = calculatePercentage(party.seats, parliamentSeats);
+                return `
+                    <div class="party-card">
+                        <div class="party-color" style="background: ${party.color};"></div>
+                        <div class="party-info">
+                            <div class="party-name">${escapeHTML(party.name)}</div>
+                            <div class="party-details">${formatNumber(party.votes)} votes (${votePercent.toFixed(1)}%)</div>
+                        </div>
+                        <div class="party-seats">${party.seats}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Render allocation table
+            const tbody = document.getElementById('allocationBody');
+            const qualifiedVotes = qualifiedParties.reduce((sum, p) => sum + p.votes, 0);
+            tbody.innerHTML = allocation.map(party => {
+                const votePercent = calculatePercentage(party.votes, totalVotes);
+                const seatPercent = calculatePercentage(party.seats, parliamentSeats);
+                return `
+                    <tr>
+                        <td><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${party.color}; margin-right: 8px;"></span>${escapeHTML(party.name)}</td>
+                        <td>${formatNumber(party.votes)}</td>
+                        <td>${votePercent.toFixed(2)}%</td>
+                        <td style="font-weight: 700; color: ${party.color};">${party.seats}</td>
+                        <td>${seatPercent.toFixed(2)}%</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function addEntry() {
@@ -527,6 +861,8 @@
             const totalVotes = entries.reduce((sum, entry) => sum + entry.votes, 0);
             totalVotesSpan.textContent = formatNumber(totalVotes);
 
+            const formGovBtn = document.getElementById('formGovernmentBtn');
+
             if (entries.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -534,12 +870,16 @@
                     </div>
                 `;
                 statsContainer.style.display = 'none';
+                formGovBtn.style.display = 'none';
                 saveToStorage();
                 return;
             }
 
             // Calculate stats
             const qualifiedCount = entries.filter(e => calculatePercentage(e.votes, totalVotes) >= threshold).length;
+
+            // Show/hide Form Government button
+            formGovBtn.style.display = qualifiedCount > 0 ? 'inline-block' : 'none';
             const belowCount = entries.length - qualifiedCount;
             const remainingCountries = totalCountries > 0 ? Math.max(0, totalCountries - entries.length) : 0;
             const minVotes = Math.min(...entries.map(e => e.votes));
