@@ -509,6 +509,10 @@
             font-size: 0.9rem;
         }
 
+        .party-position {
+            margin-top: 5px;
+        }
+
         .party-seats {
             font-size: 1.8rem;
             font-weight: 700;
@@ -717,6 +721,41 @@
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
+        }
+
+        .coalition-warning {
+            background: rgba(255, 152, 0, 0.15);
+            border: 2px solid #ff9800;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .coalition-warning-title {
+            color: #ff9800;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .coalition-warning-list {
+            color: #ffb74d;
+            font-size: 0.9rem;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .coalition-warning-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 152, 0, 0.2);
+        }
+
+        .coalition-warning-list li:last-child {
+            border-bottom: none;
         }
 
         .coalition-parties {
@@ -1041,6 +1080,7 @@
                     <div class="coalition-parties" id="coalitionParties">
                         <span class="coalition-empty">Click on parties below to form a coalition</span>
                     </div>
+                    <div id="coalitionWarning" class="coalition-warning" style="display: none;"></div>
                 </div>
 
                 <div id="seatsBar" class="seats-bar"></div>
@@ -1055,6 +1095,7 @@
                     <thead>
                         <tr>
                             <th>Party</th>
+                            <th>Position</th>
                             <th>Votes</th>
                             <th>Vote %</th>
                             <th>Seats</th>
@@ -1205,12 +1246,34 @@
             if (selectedPartiesData.length === 0) {
                 coalitionParties.innerHTML = '<span class="coalition-empty">Click on parties below to form a coalition</span>';
             } else {
-                coalitionParties.innerHTML = selectedPartiesData.map(party => `
-                    <span class="coalition-party-tag">
-                        <span class="dot" style="background: ${party.color};"></span>
-                        ${escapeHTML(party.name)} (${party.seats})
-                    </span>
-                `).join('');
+                coalitionParties.innerHTML = selectedPartiesData.map(party => {
+                    const positionClass = getPositionClass(party.position || 'Middle');
+                    return `
+                        <span class="coalition-party-tag">
+                            <span class="dot" style="background: ${party.color};"></span>
+                            ${escapeHTML(party.name)} (${party.seats})
+                            <span class="position-badge ${positionClass}" style="margin-left: 5px; font-size: 0.65rem;">${party.position || 'Unknown'}</span>
+                        </span>
+                    `;
+                }).join('');
+            }
+
+            // Check coalition compatibility and show warning if needed
+            const coalitionWarning = document.getElementById('coalitionWarning');
+            const compatibility = checkCoalitionCompatibility(selectedPartiesData);
+
+            if (!compatibility.compatible && selectedPartiesData.length >= 2) {
+                coalitionWarning.style.display = 'block';
+                coalitionWarning.innerHTML = `
+                    <div class="coalition-warning-title">
+                        ⚠️ Political Incompatibility Warning
+                    </div>
+                    <ul class="coalition-warning-list">
+                        ${compatibility.warnings.map(w => `<li>${escapeHTML(w)}</li>`).join('')}
+                    </ul>
+                `;
+            } else {
+                coalitionWarning.style.display = 'none';
             }
 
             // Render government composition
@@ -1398,6 +1461,7 @@
                 const votePercent = calculatePercentage(party.votes, totalVotes);
                 const seatPercent = calculatePercentage(party.seats, parliamentSeats);
                 const isSelected = selectedParties.has(party.id);
+                const positionClass = getPositionClass(party.position || 'Middle');
                 return `
                     <div class="party-card ${isSelected ? 'selected' : ''}" id="party-card-${party.id}" onclick="toggleParty(${party.id})">
                         <div class="party-checkbox"></div>
@@ -1405,6 +1469,7 @@
                         <div class="party-info">
                             <div class="party-name">${escapeHTML(party.name)}</div>
                             <div class="party-details">${formatNumber(party.votes)} votes (${votePercent.toFixed(1)}%)</div>
+                            <div class="party-position"><span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span></div>
                         </div>
                         <div class="party-seats">${party.seats}</div>
                     </div>
@@ -1417,9 +1482,11 @@
             tbody.innerHTML = allocation.map(party => {
                 const votePercent = calculatePercentage(party.votes, totalVotes);
                 const seatPercent = calculatePercentage(party.seats, parliamentSeats);
+                const positionClass = getPositionClass(party.position || 'Middle');
                 return `
                     <tr>
                         <td><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${party.color}; margin-right: 8px;"></span>${escapeHTML(party.name)}</td>
+                        <td><span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span></td>
                         <td>${formatNumber(party.votes)}</td>
                         <td>${votePercent.toFixed(2)}%</td>
                         <td style="font-weight: 700; color: ${party.color};">${party.seats}</td>
@@ -1452,6 +1519,40 @@
                 case 'Hard Right Wing': return 'position-hard-right';
                 default: return 'position-middle';
             }
+        }
+
+        function getPositionIndex(position) {
+            const positions = ['Hard Left Wing', 'Left Wing', 'Middle', 'Right Wing', 'Hard Right Wing'];
+            return positions.indexOf(position);
+        }
+
+        function checkCoalitionCompatibility(parties) {
+            if (parties.length < 2) return { compatible: true, warnings: [] };
+
+            // Sort by seats to find the leading party (PM party)
+            const sortedParties = [...parties].sort((a, b) => b.seats - a.seats);
+            const pmParty = sortedParties[0];
+            const pmPositionIndex = getPositionIndex(pmParty.position);
+
+            const warnings = [];
+            const incompatibleParties = [];
+
+            sortedParties.slice(1).forEach(party => {
+                const partyPositionIndex = getPositionIndex(party.position);
+                const distance = Math.abs(pmPositionIndex - partyPositionIndex);
+
+                if (distance > 1) {
+                    incompatibleParties.push(party);
+                    warnings.push(`${party.name} (${party.position}) is too far from ${pmParty.name} (${pmParty.position})`);
+                }
+            });
+
+            return {
+                compatible: incompatibleParties.length === 0,
+                warnings: warnings,
+                incompatibleParties: incompatibleParties,
+                pmParty: pmParty
+            };
         }
 
         function addEntry() {
