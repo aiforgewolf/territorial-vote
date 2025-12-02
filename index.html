@@ -765,6 +765,124 @@
             opacity: 1;
         }
 
+        /* Government Composition Styles */
+        .government-section {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 25px;
+            display: none;
+        }
+
+        .government-section.active {
+            display: block;
+        }
+
+        .government-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .government-header h3 {
+            color: #e94560;
+            font-size: 1.3rem;
+        }
+
+        .government-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .minister-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .minister-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .minister-card.prime-minister {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.2), rgba(255, 107, 107, 0.2));
+            border: 2px solid #e94560;
+        }
+
+        .minister-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .minister-card.prime-minister .minister-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+        }
+
+        .minister-title {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .minister-card.prime-minister .minister-title {
+            font-size: 0.9rem;
+            color: #e94560;
+        }
+
+        .minister-party {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .minister-card.prime-minister .minister-party {
+            font-size: 1.2rem;
+        }
+
+        .government-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .gov-party-share {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        .gov-party-share .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .gov-party-share .count {
+            font-weight: 700;
+            color: #e94560;
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -912,6 +1030,15 @@
                     </thead>
                     <tbody id="allocationBody"></tbody>
                 </table>
+
+                <div id="governmentSection" class="government-section">
+                    <div class="government-header">
+                        <h3>Government Composition</h3>
+                        <span style="color: #a0a0a0;">14 positions (1 Prime Minister + 13 Ministers)</span>
+                    </div>
+                    <div id="governmentGrid" class="government-grid"></div>
+                    <div id="governmentSummary" class="government-summary"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1052,6 +1179,100 @@
                     </span>
                 `).join('');
             }
+
+            // Render government composition
+            renderGovernment(selectedPartiesData, hasMajority);
+        }
+
+        function renderGovernment(coalitionParties, hasMajority) {
+            const governmentSection = document.getElementById('governmentSection');
+            const governmentGrid = document.getElementById('governmentGrid');
+            const governmentSummary = document.getElementById('governmentSummary');
+
+            // Only show if there's a majority coalition
+            if (!hasMajority || coalitionParties.length === 0) {
+                governmentSection.classList.remove('active');
+                return;
+            }
+
+            governmentSection.classList.add('active');
+
+            // Sort coalition parties by seats (descending)
+            const sortedParties = [...coalitionParties].sort((a, b) => b.seats - a.seats);
+            const totalCoalitionSeats = sortedParties.reduce((sum, p) => sum + p.seats, 0);
+
+            // Minister positions (13 ministers + 1 PM = 14 total)
+            const ministerTitles = [
+                'Finance', 'Foreign Affairs', 'Interior', 'Defense',
+                'Justice', 'Health', 'Education', 'Economy',
+                'Labor', 'Environment', 'Transport', 'Agriculture', 'Culture'
+            ];
+
+            // Allocate ministers using D'Hondt method (proportional to seats)
+            const ministerAllocation = sortedParties.map(p => ({ ...p, ministers: 0 }));
+
+            // Prime Minister goes to biggest party
+            ministerAllocation[0].ministers = 1;
+
+            // Allocate remaining 13 ministers proportionally
+            for (let i = 0; i < 13; i++) {
+                let maxQuotient = -1;
+                let winnerIndex = 0;
+
+                ministerAllocation.forEach((party, index) => {
+                    const quotient = party.seats / (party.ministers + 1);
+                    if (quotient > maxQuotient) {
+                        maxQuotient = quotient;
+                        winnerIndex = index;
+                    }
+                });
+
+                ministerAllocation[winnerIndex].ministers++;
+            }
+
+            // Build minister cards
+            let gridHTML = '';
+            let ministerIndex = 0;
+
+            // Prime Minister first (biggest party)
+            gridHTML += `
+                <div class="minister-card prime-minister">
+                    <div class="minister-icon" style="background: ${sortedParties[0].color};">👑</div>
+                    <div class="minister-title">Prime Minister</div>
+                    <div class="minister-party">${escapeHTML(sortedParties[0].name)}</div>
+                </div>
+            `;
+
+            // Distribute other ministers
+            ministerAllocation.forEach(party => {
+                // Subtract 1 from first party (PM already counted)
+                const ministersToShow = party.id === sortedParties[0].id ? party.ministers - 1 : party.ministers;
+
+                for (let i = 0; i < ministersToShow && ministerIndex < 13; i++) {
+                    gridHTML += `
+                        <div class="minister-card">
+                            <div class="minister-icon" style="background: ${party.color};">🏛️</div>
+                            <div class="minister-title">${ministerTitles[ministerIndex]}</div>
+                            <div class="minister-party">${escapeHTML(party.name)}</div>
+                        </div>
+                    `;
+                    ministerIndex++;
+                }
+            });
+
+            governmentGrid.innerHTML = gridHTML;
+
+            // Build summary
+            governmentSummary.innerHTML = ministerAllocation
+                .filter(p => p.ministers > 0)
+                .map(party => `
+                    <div class="gov-party-share">
+                        <span class="dot" style="background: ${party.color};"></span>
+                        <span>${escapeHTML(party.name)}:</span>
+                        <span class="count">${party.ministers}</span>
+                        <span style="color: #a0a0a0;">position${party.ministers > 1 ? 's' : ''}</span>
+                    </div>
+                `).join('');
         }
 
         function updatePartyCards() {
