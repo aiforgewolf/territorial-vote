@@ -380,6 +380,12 @@
             color: white;
         }
 
+        .btn-export {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            margin-left: 10px;
+        }
+
         .parliament-header {
             display: flex;
             justify-content: space-between;
@@ -740,6 +746,7 @@
                     <div>
                         <span class="total-votes">Total Votes: <span id="totalVotes">0</span></span>
                         <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+                        <button id="exportBtn" class="btn btn-export" onclick="exportToCSV()" style="display: none;">Export CSV</button>
                         <button id="formGovernmentBtn" class="btn btn-parliament" onclick="showParliament()" style="display: none;">Form Government</button>
                     </div>
                 </div>
@@ -1101,6 +1108,7 @@
             totalVotesSpan.textContent = formatNumber(totalVotes);
 
             const formGovBtn = document.getElementById('formGovernmentBtn');
+            const exportBtn = document.getElementById('exportBtn');
 
             if (entries.length === 0) {
                 container.innerHTML = `
@@ -1110,6 +1118,7 @@
                 `;
                 statsContainer.style.display = 'none';
                 formGovBtn.style.display = 'none';
+                exportBtn.style.display = 'none';
                 saveToStorage();
                 return;
             }
@@ -1117,8 +1126,9 @@
             // Calculate stats
             const qualifiedCount = entries.filter(e => calculatePercentage(e.votes, totalVotes) >= threshold).length;
 
-            // Show/hide Form Government button
+            // Show/hide buttons
             formGovBtn.style.display = qualifiedCount > 0 ? 'inline-block' : 'none';
+            exportBtn.style.display = 'inline-block';
             const belowCount = entries.length - qualifiedCount;
             const remainingCountries = totalCountries > 0 ? Math.max(0, totalCountries - entries.length) : 0;
             const minVotes = Math.min(...entries.map(e => e.votes));
@@ -1210,6 +1220,58 @@
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
+        }
+
+        function exportToCSV() {
+            if (entries.length === 0) return;
+
+            const totalVotes = entries.reduce((sum, e) => sum + e.votes, 0);
+            const remainingCountries = totalCountries > 0 ? Math.max(0, totalCountries - entries.length) : 0;
+            const minVotes = Math.min(...entries.map(e => e.votes));
+            const maxVotes = (minVotes * remainingCountries) + totalVotes;
+
+            // CSV header
+            const headers = ['Country', 'Votes', 'Percentage', 'Min Percentage', 'Status'];
+
+            // Sort entries by votes descending
+            const sortedEntries = [...entries].sort((a, b) => b.votes - a.votes);
+
+            // Generate rows
+            const rows = sortedEntries.map(entry => {
+                const percentage = calculatePercentage(entry.votes, totalVotes);
+                const minPercentage = calculatePercentage(entry.votes, maxVotes);
+                const status = percentage >= threshold ? 'Qualified' : 'Below Threshold';
+
+                // Escape values that might contain commas or quotes
+                const escapedName = entry.name.includes(',') || entry.name.includes('"')
+                    ? `"${entry.name.replace(/"/g, '""')}"`
+                    : entry.name;
+
+                return [
+                    escapedName,
+                    entry.votes,
+                    percentage.toFixed(2) + '%',
+                    minPercentage.toFixed(2) + '%',
+                    status
+                ].join(',');
+            });
+
+            // Combine header and rows
+            const csv = [headers.join(','), ...rows].join('\n');
+
+            // Create download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `election_results_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
         // Allow Enter key to add entry
