@@ -659,6 +659,62 @@
         }
 
         /* Coalition Builder Styles */
+        .election-analysis {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .election-analysis h3 {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .analysis-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .analysis-card.good {
+            border-left: 4px solid #28a745;
+        }
+
+        .analysis-card.warning {
+            border-left: 4px solid #ffc107;
+        }
+
+        .analysis-card.bad {
+            border-left: 4px solid #dc3545;
+        }
+
+        .analysis-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .analysis-label {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+        }
+
+        .analysis-detail {
+            color: #888;
+            font-size: 0.75rem;
+            margin-top: 5px;
+        }
+
         .coalition-builder {
             background: rgba(255, 255, 255, 0.08);
             border-radius: 15px;
@@ -1069,6 +1125,27 @@
                     </div>
                 </div>
 
+                <div id="electionAnalysis" class="election-analysis">
+                    <h3>📊 Election Analysis</h3>
+                    <div class="analysis-grid">
+                        <div class="analysis-card" id="proportionalityCard">
+                            <div class="analysis-value" id="proportionalityIndex">-</div>
+                            <div class="analysis-label">Gallagher Index</div>
+                            <div class="analysis-detail">Lower = more proportional (0-100)</div>
+                        </div>
+                        <div class="analysis-card" id="wastedVotesCard">
+                            <div class="analysis-value" id="wastedVotes">-</div>
+                            <div class="analysis-label">Wasted Votes</div>
+                            <div class="analysis-detail" id="wastedVotesDetail">Votes for parties below threshold</div>
+                        </div>
+                        <div class="analysis-card" id="effectivePartiesCard">
+                            <div class="analysis-value" id="effectiveParties">-</div>
+                            <div class="analysis-label">Effective Parties</div>
+                            <div class="analysis-detail">Laakso-Taagepera index</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="coalitionBuilder" class="coalition-builder">
                     <div class="coalition-header">
                         <h3>Coalition Builder</h3>
@@ -1384,6 +1461,106 @@
             });
         }
 
+        // Calculate Gallagher Index (Least Squares Index)
+        // LSq = √(½ × Σ(vote% - seat%)²)
+        function calculateGallagherIndex(allocation, totalVotes, totalSeats) {
+            let sumSquaredDiff = 0;
+
+            allocation.forEach(party => {
+                const votePercent = (party.votes / totalVotes) * 100;
+                const seatPercent = (party.seats / totalSeats) * 100;
+                sumSquaredDiff += Math.pow(votePercent - seatPercent, 2);
+            });
+
+            return Math.sqrt(sumSquaredDiff / 2);
+        }
+
+        // Calculate wasted votes (votes for parties below threshold)
+        function calculateWastedVotes(allEntries, totalVotes, thresholdPercent) {
+            let wastedVotes = 0;
+
+            allEntries.forEach(entry => {
+                const votePercent = (entry.votes / totalVotes) * 100;
+                if (votePercent < thresholdPercent) {
+                    wastedVotes += entry.votes;
+                }
+            });
+
+            return {
+                votes: wastedVotes,
+                percent: (wastedVotes / totalVotes) * 100
+            };
+        }
+
+        // Calculate Effective Number of Parties (Laakso-Taagepera index)
+        // N = 1 / Σ(p_i²) where p_i is seat share as proportion
+        function calculateEffectiveParties(allocation, totalSeats) {
+            let sumSquaredShares = 0;
+
+            allocation.forEach(party => {
+                const seatShare = party.seats / totalSeats;
+                sumSquaredShares += Math.pow(seatShare, 2);
+            });
+
+            return sumSquaredShares > 0 ? 1 / sumSquaredShares : 0;
+        }
+
+        // Update election analysis display
+        function updateElectionAnalysis(allocation, totalVotes, totalSeats) {
+            // Gallagher Index
+            const gallagher = calculateGallagherIndex(allocation, totalVotes, totalSeats);
+            const gallagherEl = document.getElementById('proportionalityIndex');
+            const gallagherCard = document.getElementById('proportionalityCard');
+
+            gallagherEl.textContent = gallagher.toFixed(2);
+
+            // Color code: < 5 = good, 5-10 = warning, > 10 = bad
+            gallagherCard.className = 'analysis-card';
+            if (gallagher < 5) {
+                gallagherCard.classList.add('good');
+            } else if (gallagher < 10) {
+                gallagherCard.classList.add('warning');
+            } else {
+                gallagherCard.classList.add('bad');
+            }
+
+            // Wasted Votes
+            const wasted = calculateWastedVotes(entries, totalVotes, threshold);
+            const wastedEl = document.getElementById('wastedVotes');
+            const wastedCard = document.getElementById('wastedVotesCard');
+            const wastedDetail = document.getElementById('wastedVotesDetail');
+
+            wastedEl.textContent = wasted.percent.toFixed(1) + '%';
+            wastedDetail.textContent = `${formatNumber(wasted.votes)} votes lost`;
+
+            // Color code: < 5% = good, 5-15% = warning, > 15% = bad
+            wastedCard.className = 'analysis-card';
+            if (wasted.percent < 5) {
+                wastedCard.classList.add('good');
+            } else if (wasted.percent < 15) {
+                wastedCard.classList.add('warning');
+            } else {
+                wastedCard.classList.add('bad');
+            }
+
+            // Effective Number of Parties
+            const effectiveN = calculateEffectiveParties(allocation, totalSeats);
+            const effectiveEl = document.getElementById('effectiveParties');
+            const effectiveCard = document.getElementById('effectivePartiesCard');
+
+            effectiveEl.textContent = effectiveN.toFixed(2);
+
+            // Color code based on fragmentation
+            effectiveCard.className = 'analysis-card';
+            if (effectiveN <= 3) {
+                effectiveCard.classList.add('good'); // Stable, few parties
+            } else if (effectiveN <= 5) {
+                effectiveCard.classList.add('warning'); // Moderate fragmentation
+            } else {
+                effectiveCard.classList.add('bad'); // High fragmentation
+            }
+        }
+
         // Get divisor based on allocation method
         function getDivisor(seatsWon, method) {
             if (method === 'dhondt') {
@@ -1494,6 +1671,9 @@
                     </tr>
                 `;
             }).join('');
+
+            // Update election analysis
+            updateElectionAnalysis(allocation, totalVotes, parliamentSeats);
 
             // Update coalition display
             updateCoalition();
