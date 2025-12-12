@@ -1011,6 +1011,121 @@
             color: #e94560;
         }
 
+        /* Opposition Leader Styles */
+        .opposition-section {
+            background: rgba(220, 53, 69, 0.1);
+            border: 2px solid #dc3545;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .opposition-section.active {
+            display: block;
+        }
+
+        .opposition-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .opposition-header h4 {
+            color: #dc3545;
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .opposition-leader {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px 15px;
+            border-radius: 8px;
+        }
+
+        .opposition-leader .party-color {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+        }
+
+        .opposition-leader .party-info {
+            flex: 1;
+        }
+
+        .opposition-leader .party-name {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .opposition-leader .party-seats {
+            color: #dc3545;
+            font-weight: 700;
+        }
+
+        /* Committees Section Styles */
+        .committees-section {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 25px;
+        }
+
+        .committees-section h3 {
+            color: #e94560;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .committees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .committee-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 4px solid transparent;
+        }
+
+        .committee-icon {
+            font-size: 1.3rem;
+        }
+
+        .committee-info {
+            flex: 1;
+        }
+
+        .committee-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #fff;
+        }
+
+        .committee-chair {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            margin-top: 3px;
+        }
+
+        .committees-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -1158,6 +1273,13 @@
                         <span class="coalition-empty">Click on parties below to form a coalition</span>
                     </div>
                     <div id="coalitionWarning" class="coalition-warning" style="display: none;"></div>
+                    <div id="oppositionSection" class="opposition-section">
+                        <div class="opposition-header">
+                            <span>👊</span>
+                            <h4>Opposition Leader</h4>
+                        </div>
+                        <div id="oppositionLeader" class="opposition-leader"></div>
+                    </div>
                 </div>
 
                 <div id="seatsBar" class="seats-bar"></div>
@@ -1189,6 +1311,12 @@
                     </div>
                     <div id="governmentGrid" class="government-grid"></div>
                     <div id="governmentSummary" class="government-summary"></div>
+                </div>
+
+                <div id="committeesSection" class="committees-section">
+                    <h3>🏛️ Parliamentary Committees</h3>
+                    <div id="committeesGrid" class="committees-grid"></div>
+                    <div id="committeesSummary" class="committees-summary"></div>
                 </div>
             </div>
         </div>
@@ -1353,6 +1481,32 @@
                 coalitionWarning.style.display = 'none';
             }
 
+            // Find and display opposition leader (largest party not in coalition)
+            const oppositionSection = document.getElementById('oppositionSection');
+            const oppositionLeader = document.getElementById('oppositionLeader');
+
+            if (selectedPartiesData.length > 0) {
+                const oppositionParties = currentAllocation.filter(p => !selectedParties.has(p.id));
+                if (oppositionParties.length > 0) {
+                    const leader = oppositionParties.reduce((max, p) => p.seats > max.seats ? p : max);
+                    const positionClass = getPositionClass(leader.position || 'Middle');
+
+                    oppositionSection.classList.add('active');
+                    oppositionLeader.innerHTML = `
+                        <div class="party-color" style="background: ${leader.color};"></div>
+                        <div class="party-info">
+                            <div class="party-name">${escapeHTML(leader.name)}</div>
+                            <span class="position-badge ${positionClass}" style="font-size: 0.7rem;">${leader.position || 'Unknown'}</span>
+                        </div>
+                        <div class="party-seats">${leader.seats} seats</div>
+                    `;
+                } else {
+                    oppositionSection.classList.remove('active');
+                }
+            } else {
+                oppositionSection.classList.remove('active');
+            }
+
             // Render government composition
             renderGovernment(selectedPartiesData, hasMajority);
         }
@@ -1444,6 +1598,80 @@
                         <span>${escapeHTML(party.name)}:</span>
                         <span class="count">${party.ministers}</span>
                         <span style="color: #a0a0a0;">position${party.ministers > 1 ? 's' : ''}</span>
+                    </div>
+                `).join('');
+        }
+
+        // Parliamentary committees with icons
+        const parliamentaryCommittees = [
+            { name: 'Budget & Finance', icon: '💰' },
+            { name: 'Foreign Affairs', icon: '🌍' },
+            { name: 'Defense & Security', icon: '🛡️' },
+            { name: 'Constitutional & Legal', icon: '⚖️' },
+            { name: 'Economic Affairs', icon: '📈' },
+            { name: 'Social Affairs', icon: '👥' },
+            { name: 'Health', icon: '🏥' },
+            { name: 'Education & Science', icon: '🎓' },
+            { name: 'Environment', icon: '🌱' },
+            { name: 'Agriculture', icon: '🌾' },
+            { name: 'Transport & Infrastructure', icon: '🚆' },
+            { name: 'Culture & Media', icon: '🎭' },
+            { name: 'European Affairs', icon: '🇪🇺' },
+            { name: 'Human Rights', icon: '✊' },
+            { name: 'Public Administration', icon: '🏛️' }
+        ];
+
+        function renderCommittees(allocation) {
+            const committeesGrid = document.getElementById('committeesGrid');
+            const committeesSummary = document.getElementById('committeesSummary');
+
+            if (allocation.length === 0) return;
+
+            // Allocate committee chairs using D'Hondt method (all parties, not just coalition)
+            const committeeAllocation = allocation.map(p => ({ ...p, committees: 0 }));
+            const committeeAssignments = [];
+
+            // Distribute all committee chairs
+            for (let i = 0; i < parliamentaryCommittees.length; i++) {
+                let maxQuotient = -1;
+                let winnerIndex = 0;
+
+                committeeAllocation.forEach((party, index) => {
+                    const quotient = party.seats / (party.committees + 1);
+                    if (quotient > maxQuotient) {
+                        maxQuotient = quotient;
+                        winnerIndex = index;
+                    }
+                });
+
+                committeeAllocation[winnerIndex].committees++;
+                committeeAssignments.push({
+                    committee: parliamentaryCommittees[i],
+                    party: committeeAllocation[winnerIndex]
+                });
+            }
+
+            // Render committee cards
+            committeesGrid.innerHTML = committeeAssignments.map(assignment => `
+                <div class="committee-card" style="border-left-color: ${assignment.party.color};">
+                    <div class="committee-icon">${assignment.committee.icon}</div>
+                    <div class="committee-info">
+                        <div class="committee-name">${assignment.committee.name}</div>
+                        <div class="committee-chair">Chair: ${escapeHTML(assignment.party.name)}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render summary
+            committeesSummary.innerHTML = committeeAllocation
+                .filter(p => p.committees > 0)
+                .sort((a, b) => b.committees - a.committees)
+                .map(party => `
+                    <div class="gov-party-share">
+                        <span class="dot" style="background: ${party.color};"></span>
+                        <span>${escapeHTML(party.name)}:</span>
+                        <span class="count">${party.committees}</span>
+                        <span style="color: #a0a0a0;">committee${party.committees > 1 ? 's' : ''}</span>
                     </div>
                 `).join('');
         }
@@ -1674,6 +1902,9 @@
 
             // Update election analysis
             updateElectionAnalysis(allocation, totalVotes, parliamentSeats);
+
+            // Render parliamentary committees
+            renderCommittees(allocation);
 
             // Update coalition display
             updateCoalition();
