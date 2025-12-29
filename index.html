@@ -1557,6 +1557,27 @@
                 ministerAllocation[winnerIndex].ministers++;
             }
 
+            // Ensure every party has at least 1 minister if possible
+            // Take from parties with 2+ ministers (largest first) and give to parties with 0
+            let partiesWithZero = ministerAllocation.filter(p => p.ministers === 0);
+
+            while (partiesWithZero.length > 0) {
+                // Find a party with 2+ ministers to take from (sorted by seats, so largest first)
+                const donorParty = ministerAllocation.find(p => p.ministers >= 2);
+
+                if (!donorParty) {
+                    // No party has 2+ ministers, can't redistribute further
+                    break;
+                }
+
+                // Take 1 minister from donor and give to first party with 0
+                donorParty.ministers--;
+                partiesWithZero[0].ministers++;
+
+                // Update the list of parties with zero ministers
+                partiesWithZero = ministerAllocation.filter(p => p.ministers === 0);
+            }
+
             // Build minister cards
             let gridHTML = '';
             let ministerIndex = 0;
