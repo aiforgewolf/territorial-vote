@@ -424,6 +424,134 @@
             margin-left: 10px;
         }
 
+        .btn-scan {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+
+        .scan-section {
+            background: rgba(155, 89, 182, 0.1);
+            border: 2px dashed #9b59b6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .scan-section h4 {
+            color: #9b59b6;
+            margin-bottom: 15px;
+        }
+
+        .scan-dropzone {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .scan-dropzone:hover {
+            background: rgba(155, 89, 182, 0.2);
+        }
+
+        .scan-dropzone.dragover {
+            background: rgba(155, 89, 182, 0.3);
+            border-color: #fff;
+        }
+
+        .scan-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .scan-text {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .scan-preview {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .scan-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            border: 2px solid #9b59b6;
+        }
+
+        .scan-progress {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .scan-progress-bar {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .scan-progress-fill {
+            background: linear-gradient(90deg, #9b59b6, #8e44ad);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .scan-status {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        .scan-results {
+            margin-top: 15px;
+            text-align: left;
+            display: none;
+        }
+
+        .scan-results-list {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .scan-result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .scan-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .scan-result-name {
+            color: #fff;
+        }
+
+        .scan-result-votes {
+            color: #9b59b6;
+            font-weight: 600;
+        }
+
+        .scan-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        #scanFileInput {
+            display: none;
+        }
+
         .parliament-header {
             display: flex;
             justify-content: space-between;
@@ -1187,6 +1315,32 @@
                 </div>
                 <button class="btn btn-add" onclick="addEntry()">Add Entry</button>
             </div>
+
+            <div class="scan-section">
+                <h4>📷 Scan from Image</h4>
+                <input type="file" id="scanFileInput" accept="image/*">
+                <div class="scan-dropzone" id="scanDropzone" onclick="document.getElementById('scanFileInput').click()">
+                    <div class="scan-icon">📤</div>
+                    <div class="scan-text">Click to upload or drag & drop an image<br>Supports leaderboard screenshots</div>
+                </div>
+                <div class="scan-preview" id="scanPreview">
+                    <img id="scanPreviewImage" src="" alt="Preview">
+                </div>
+                <div class="scan-progress" id="scanProgress">
+                    <div class="scan-progress-bar">
+                        <div class="scan-progress-fill" id="scanProgressFill"></div>
+                    </div>
+                    <div class="scan-status" id="scanStatus">Initializing OCR...</div>
+                </div>
+                <div class="scan-results" id="scanResults">
+                    <h5 style="color: #9b59b6; margin-bottom: 10px;">Found Entries:</h5>
+                    <div class="scan-results-list" id="scanResultsList"></div>
+                    <div class="scan-actions">
+                        <button class="btn btn-scan" onclick="addScannedEntries()">Add All Entries</button>
+                        <button class="btn btn-back" onclick="resetScan()">Cancel</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="electionScreen" class="election-screen">
@@ -1322,6 +1476,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script>
         const STORAGE_KEY = 'electionCalculatorData';
         let entries = [];
@@ -2236,6 +2391,183 @@
         // Initialize: load saved data and render
         loadFromStorage();
         renderResults();
+
+        // ============ IMAGE SCANNING FUNCTIONS ============
+        let scannedEntries = [];
+
+        // File input change handler
+        document.getElementById('scanFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageFile(file);
+            }
+        });
+
+        // Drag and drop handlers
+        const dropzone = document.getElementById('scanDropzone');
+
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageFile(file);
+            }
+        });
+
+        function handleImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+
+                // Show preview
+                document.getElementById('scanPreviewImage').src = imageData;
+                document.getElementById('scanPreview').style.display = 'block';
+                document.getElementById('scanDropzone').style.display = 'none';
+
+                // Start OCR
+                performOCR(imageData);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function performOCR(imageData) {
+            const progressDiv = document.getElementById('scanProgress');
+            const progressFill = document.getElementById('scanProgressFill');
+            const statusText = document.getElementById('scanStatus');
+
+            progressDiv.style.display = 'block';
+
+            try {
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(m.progress * 100);
+                            progressFill.style.width = progress + '%';
+                            statusText.textContent = `Scanning... ${progress}%`;
+                        } else {
+                            statusText.textContent = m.status;
+                        }
+                    }
+                });
+
+                const { data: { text } } = await worker.recognize(imageData);
+                await worker.terminate();
+
+                // Parse the OCR results
+                parseOCRResults(text);
+
+            } catch (error) {
+                console.error('OCR Error:', error);
+                statusText.textContent = 'Error scanning image. Please try again.';
+                progressFill.style.width = '0%';
+            }
+        }
+
+        function parseOCRResults(text) {
+            scannedEntries = [];
+            const lines = text.split('\n').filter(line => line.trim());
+
+            // Pattern: looks for lines with text and numbers
+            // Format expected: [rank]. [name] [votes]
+            // Examples: "1. BigHood 222894" or "BigHood 222894"
+
+            lines.forEach(line => {
+                // Clean up the line
+                let cleanLine = line.trim();
+
+                // Try to extract name and votes
+                // Pattern 1: "1. Name 12345" or "1 Name 12345"
+                // Pattern 2: "Name 12345"
+
+                // Remove rank number at the beginning (e.g., "1." or "1 ")
+                cleanLine = cleanLine.replace(/^\d+[\.\s]+/, '');
+
+                // Find the last number in the line (votes)
+                const numberMatches = cleanLine.match(/(\d[\d,\.]*\d|\d+)\s*$/);
+
+                if (numberMatches) {
+                    const votesStr = numberMatches[1].replace(/[,\.]/g, '');
+                    const votes = parseInt(votesStr);
+
+                    if (!isNaN(votes) && votes > 0) {
+                        // Extract name (everything before the votes)
+                        let name = cleanLine.replace(/(\d[\d,\.]*\d|\d+)\s*$/, '').trim();
+
+                        // Clean up common OCR artifacts
+                        name = name.replace(/[|\\\/\[\]{}]/g, '').trim();
+
+                        // Skip if name is empty or just numbers
+                        if (name && !/^\d+$/.test(name)) {
+                            scannedEntries.push({
+                                name: name,
+                                votes: votes
+                            });
+                        }
+                    }
+                }
+            });
+
+            displayScanResults();
+        }
+
+        function displayScanResults() {
+            const resultsDiv = document.getElementById('scanResults');
+            const resultsList = document.getElementById('scanResultsList');
+            const progressDiv = document.getElementById('scanProgress');
+
+            progressDiv.style.display = 'none';
+
+            if (scannedEntries.length === 0) {
+                resultsList.innerHTML = '<div style="color: #dc3545; padding: 10px;">No entries found. Please try a clearer image.</div>';
+            } else {
+                resultsList.innerHTML = scannedEntries.map((entry, index) => `
+                    <div class="scan-result-item">
+                        <span class="scan-result-name">${index + 1}. ${escapeHTML(entry.name)}</span>
+                        <span class="scan-result-votes">${formatNumber(entry.votes)}</span>
+                    </div>
+                `).join('');
+            }
+
+            resultsDiv.style.display = 'block';
+        }
+
+        function addScannedEntries() {
+            if (scannedEntries.length === 0) return;
+
+            scannedEntries.forEach(entry => {
+                const position = getPoliticalPosition(entry.name);
+                entries.push({
+                    id: entryId++,
+                    name: entry.name,
+                    votes: entry.votes,
+                    position: position
+                });
+            });
+
+            renderResults();
+            resetScan();
+        }
+
+        function resetScan() {
+            scannedEntries = [];
+            document.getElementById('scanFileInput').value = '';
+            document.getElementById('scanPreview').style.display = 'none';
+            document.getElementById('scanProgress').style.display = 'none';
+            document.getElementById('scanResults').style.display = 'none';
+            document.getElementById('scanDropzone').style.display = 'block';
+            document.getElementById('scanProgressFill').style.width = '0%';
+        }
     </script>
 </body>
 </html>
