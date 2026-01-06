@@ -1875,29 +1875,77 @@
                 });
             }
 
-            // Render committee cards
-            committeesGrid.innerHTML = committeeAssignments.map(assignment => `
-                <div class="committee-card" style="border-left-color: ${assignment.party.color};">
-                    <div class="committee-icon">${assignment.committee.icon}</div>
-                    <div class="committee-info">
-                        <div class="committee-name">${assignment.committee.name}</div>
-                        <div class="committee-chair">Chair: ${escapeHTML(assignment.party.name)}</div>
+            // Render committee cards with position badges
+            committeesGrid.innerHTML = committeeAssignments.map(assignment => {
+                const positionClass = getPositionClass(assignment.party.position || 'Middle');
+                return `
+                    <div class="committee-card" style="border-left-color: ${assignment.party.color};">
+                        <div class="committee-icon">${assignment.committee.icon}</div>
+                        <div class="committee-info">
+                            <div class="committee-name">${assignment.committee.name}</div>
+                            <div class="committee-chair">Chair: ${escapeHTML(assignment.party.name)}</div>
+                            <span class="position-badge ${positionClass}" style="font-size: 0.6rem; margin-top: 3px;">${assignment.party.position || 'Unknown'}</span>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
-            // Render summary
-            committeesSummary.innerHTML = committeeAllocation
+            // Calculate position distribution for committees
+            const positionCounts = {
+                'Hard Left Wing': 0,
+                'Left Wing': 0,
+                'Middle': 0,
+                'Right Wing': 0,
+                'Hard Right Wing': 0
+            };
+
+            committeeAllocation.forEach(party => {
+                if (party.committees > 0 && party.position) {
+                    positionCounts[party.position] = (positionCounts[party.position] || 0) + party.committees;
+                }
+            });
+
+            const totalCommittees = parliamentaryCommittees.length;
+
+            // Render summary with positions
+            let summaryHTML = committeeAllocation
                 .filter(p => p.committees > 0)
                 .sort((a, b) => b.committees - a.committees)
-                .map(party => `
-                    <div class="gov-party-share">
-                        <span class="dot" style="background: ${party.color};"></span>
-                        <span>${escapeHTML(party.name)}:</span>
-                        <span class="count">${party.committees}</span>
-                        <span style="color: #a0a0a0;">committee${party.committees > 1 ? 's' : ''}</span>
+                .map(party => {
+                    const positionClass = getPositionClass(party.position || 'Middle');
+                    return `
+                        <div class="gov-party-share">
+                            <span class="dot" style="background: ${party.color};"></span>
+                            <span>${escapeHTML(party.name)}:</span>
+                            <span class="count">${party.committees}</span>
+                            <span class="position-badge ${positionClass}" style="font-size: 0.6rem; margin-left: 5px;">${party.position || 'Unknown'}</span>
+                        </div>
+                    `;
+                }).join('');
+
+            // Add position distribution table
+            summaryHTML += `
+                <div style="width: 100%; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h5 style="color: #e94560; margin-bottom: 12px; font-size: 0.95rem;">📊 Committee Chairs Political Balance</h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                        ${Object.entries(positionCounts)
+                            .filter(([_, count]) => count > 0)
+                            .map(([position, count]) => {
+                                const percent = ((count / totalCommittees) * 100).toFixed(1);
+                                const posClass = getPositionClass(position);
+                                return `
+                                    <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; text-align: center;">
+                                        <span class="position-badge ${posClass}" style="font-size: 0.7rem;">${position}</span>
+                                        <div style="font-size: 1.3rem; font-weight: 700; color: #fff; margin-top: 5px;">${count}</div>
+                                        <div style="font-size: 0.8rem; color: #a0a0a0;">${percent}%</div>
+                                    </div>
+                                `;
+                            }).join('')}
                     </div>
-                `).join('');
+                </div>
+            `;
+
+            committeesSummary.innerHTML = summaryHTML;
         }
 
         function updatePartyCards() {
