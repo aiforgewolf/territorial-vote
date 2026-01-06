@@ -1738,11 +1738,13 @@
             let ministerIndex = 0;
 
             // Prime Minister first (biggest party)
+            const pmPositionClass = getPositionClass(sortedParties[0].position || 'Middle');
             gridHTML += `
                 <div class="minister-card prime-minister">
                     <div class="minister-icon" style="background: ${sortedParties[0].color};">👑</div>
                     <div class="minister-title">Prime Minister</div>
                     <div class="minister-party">${escapeHTML(sortedParties[0].name)}</div>
+                    <span class="position-badge ${pmPositionClass}" style="font-size: 0.65rem; margin-top: 5px;">${sortedParties[0].position || 'Unknown'}</span>
                 </div>
             `;
 
@@ -1750,6 +1752,7 @@
             ministerAllocation.forEach(party => {
                 // Subtract 1 from first party (PM already counted)
                 const ministersToShow = party.id === sortedParties[0].id ? party.ministers - 1 : party.ministers;
+                const positionClass = getPositionClass(party.position || 'Middle');
 
                 for (let i = 0; i < ministersToShow && ministerIndex < 13; i++) {
                     gridHTML += `
@@ -1757,6 +1760,7 @@
                             <div class="minister-icon" style="background: ${party.color};">🏛️</div>
                             <div class="minister-title">${ministerTitles[ministerIndex]}</div>
                             <div class="minister-party">${escapeHTML(party.name)}</div>
+                            <span class="position-badge ${positionClass}" style="font-size: 0.65rem; margin-top: 5px;">${party.position || 'Unknown'}</span>
                         </div>
                     `;
                     ministerIndex++;
@@ -1765,17 +1769,61 @@
 
             governmentGrid.innerHTML = gridHTML;
 
-            // Build summary
-            governmentSummary.innerHTML = ministerAllocation
+            // Calculate position distribution
+            const positionCounts = {
+                'Hard Left Wing': 0,
+                'Left Wing': 0,
+                'Middle': 0,
+                'Right Wing': 0,
+                'Hard Right Wing': 0
+            };
+
+            ministerAllocation.forEach(party => {
+                if (party.ministers > 0 && party.position) {
+                    positionCounts[party.position] = (positionCounts[party.position] || 0) + party.ministers;
+                }
+            });
+
+            const totalMinisters = 14;
+
+            // Build summary with positions
+            let summaryHTML = ministerAllocation
                 .filter(p => p.ministers > 0)
-                .map(party => `
-                    <div class="gov-party-share">
-                        <span class="dot" style="background: ${party.color};"></span>
-                        <span>${escapeHTML(party.name)}:</span>
-                        <span class="count">${party.ministers}</span>
-                        <span style="color: #a0a0a0;">position${party.ministers > 1 ? 's' : ''}</span>
+                .map(party => {
+                    const positionClass = getPositionClass(party.position || 'Middle');
+                    return `
+                        <div class="gov-party-share">
+                            <span class="dot" style="background: ${party.color};"></span>
+                            <span>${escapeHTML(party.name)}:</span>
+                            <span class="count">${party.ministers}</span>
+                            <span class="position-badge ${positionClass}" style="font-size: 0.6rem; margin-left: 5px;">${party.position || 'Unknown'}</span>
+                        </div>
+                    `;
+                }).join('');
+
+            // Add position distribution table
+            summaryHTML += `
+                <div style="width: 100%; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h5 style="color: #e94560; margin-bottom: 12px; font-size: 0.95rem;">📊 Government Political Balance</h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                        ${Object.entries(positionCounts)
+                            .filter(([_, count]) => count > 0)
+                            .map(([position, count]) => {
+                                const percent = ((count / totalMinisters) * 100).toFixed(1);
+                                const posClass = getPositionClass(position);
+                                return `
+                                    <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; text-align: center;">
+                                        <span class="position-badge ${posClass}" style="font-size: 0.7rem;">${position}</span>
+                                        <div style="font-size: 1.3rem; font-weight: 700; color: #fff; margin-top: 5px;">${count}</div>
+                                        <div style="font-size: 0.8rem; color: #a0a0a0;">${percent}%</div>
+                                    </div>
+                                `;
+                            }).join('')}
                     </div>
-                `).join('');
+                </div>
+            `;
+
+            governmentSummary.innerHTML = summaryHTML;
         }
 
         // Parliamentary committees with icons
