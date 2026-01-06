@@ -1419,6 +1419,7 @@
                     <div class="coalition-header">
                         <h3>Coalition Builder</h3>
                         <div class="coalition-stats">
+                            <span id="coalitionPartyCount" style="background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 15px; font-size: 0.85rem; margin-right: 10px;">0 parties</span>
                             <span class="coalition-seats" id="coalitionSeats">0 / <span id="majorityNeeded">101</span> seats</span>
                             <span id="coalitionBadge"></span>
                         </div>
@@ -1585,6 +1586,11 @@
             });
 
             const hasMajority = totalCoalitionSeats >= majorityNeeded;
+
+            // Update party count
+            const partyCountEl = document.getElementById('coalitionPartyCount');
+            const partyCount = selectedPartiesData.length;
+            partyCountEl.textContent = `${partyCount} ${partyCount === 1 ? 'party' : 'parties'}`;
 
             // Update seats display
             coalitionSeatsEl.innerHTML = `${totalCoalitionSeats} / <span id="majorityNeeded">${majorityNeeded}</span> seats`;
