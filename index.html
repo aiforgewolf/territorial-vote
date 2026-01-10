@@ -1725,6 +1725,66 @@
             '#dc3545', '#28a745', '#17a2b8', '#ffc107', '#6c757d'
         ];
 
+        // Real countries database with GDP-based weights and political positions
+        // GDP values are approximate (in billions USD) as economic weight
+        const realCountries = [
+            { name: 'United States', gdp: 28000, position: 'Right Wing' },
+            { name: 'China', gdp: 18000, position: 'Hard Left Wing' },
+            { name: 'Germany', gdp: 4500, position: 'Middle' },
+            { name: 'Japan', gdp: 4200, position: 'Middle' },
+            { name: 'India', gdp: 3900, position: 'Middle' },
+            { name: 'United Kingdom', gdp: 3300, position: 'Middle' },
+            { name: 'France', gdp: 3000, position: 'Left Wing' },
+            { name: 'Italy', gdp: 2200, position: 'Right Wing' },
+            { name: 'Brazil', gdp: 2100, position: 'Left Wing' },
+            { name: 'Canada', gdp: 2100, position: 'Left Wing' },
+            { name: 'Russia', gdp: 1900, position: 'Hard Right Wing' },
+            { name: 'South Korea', gdp: 1700, position: 'Middle' },
+            { name: 'Australia', gdp: 1700, position: 'Middle' },
+            { name: 'Mexico', gdp: 1500, position: 'Middle' },
+            { name: 'Spain', gdp: 1500, position: 'Left Wing' },
+            { name: 'Indonesia', gdp: 1400, position: 'Middle' },
+            { name: 'Netherlands', gdp: 1100, position: 'Middle' },
+            { name: 'Saudi Arabia', gdp: 1100, position: 'Hard Right Wing' },
+            { name: 'Turkey', gdp: 1000, position: 'Right Wing' },
+            { name: 'Switzerland', gdp: 900, position: 'Middle' },
+            { name: 'Poland', gdp: 800, position: 'Right Wing' },
+            { name: 'Taiwan', gdp: 800, position: 'Middle' },
+            { name: 'Belgium', gdp: 600, position: 'Middle' },
+            { name: 'Sweden', gdp: 600, position: 'Left Wing' },
+            { name: 'Argentina', gdp: 600, position: 'Right Wing' },
+            { name: 'Norway', gdp: 500, position: 'Left Wing' },
+            { name: 'Austria', gdp: 500, position: 'Middle' },
+            { name: 'Israel', gdp: 500, position: 'Right Wing' },
+            { name: 'United Arab Emirates', gdp: 500, position: 'Right Wing' },
+            { name: 'Ireland', gdp: 500, position: 'Middle' },
+            { name: 'Thailand', gdp: 500, position: 'Middle' },
+            { name: 'Singapore', gdp: 450, position: 'Right Wing' },
+            { name: 'South Africa', gdp: 400, position: 'Left Wing' },
+            { name: 'Denmark', gdp: 400, position: 'Left Wing' },
+            { name: 'Philippines', gdp: 400, position: 'Middle' },
+            { name: 'Malaysia', gdp: 400, position: 'Middle' },
+            { name: 'Hong Kong', gdp: 380, position: 'Middle' },
+            { name: 'Vietnam', gdp: 370, position: 'Hard Left Wing' },
+            { name: 'Pakistan', gdp: 350, position: 'Right Wing' },
+            { name: 'Czech Republic', gdp: 330, position: 'Middle' },
+            { name: 'Chile', gdp: 320, position: 'Middle' },
+            { name: 'Finland', gdp: 300, position: 'Left Wing' },
+            { name: 'Colombia', gdp: 300, position: 'Left Wing' },
+            { name: 'Romania', gdp: 300, position: 'Right Wing' },
+            { name: 'Portugal', gdp: 280, position: 'Left Wing' },
+            { name: 'New Zealand', gdp: 250, position: 'Left Wing' },
+            { name: 'Greece', gdp: 220, position: 'Left Wing' },
+            { name: 'Peru', gdp: 220, position: 'Middle' },
+            { name: 'Hungary', gdp: 200, position: 'Hard Right Wing' },
+            { name: 'Ukraine', gdp: 180, position: 'Middle' },
+            { name: 'Cuba', gdp: 100, position: 'Hard Left Wing' },
+            { name: 'North Korea', gdp: 30, position: 'Hard Left Wing' }
+        ];
+
+        // Track assigned countries to avoid duplicates
+        let assignedCountries = new Set();
+
         function saveToStorage() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries, entryId, threshold, totalCountries, parliamentSeats }));
         }
@@ -2645,13 +2705,52 @@
             updateCoalition();
         }
 
+        // Assign a real country based on GDP-weighted probability
+        function assignRealCountry(entryName) {
+            // Bonbon is always Czech Republic
+            if (entryName.toLowerCase() === 'bonbon') {
+                assignedCountries.add('Czech Republic');
+                return realCountries.find(c => c.name === 'Czech Republic');
+            }
+
+            // Get available countries (not yet assigned)
+            const availableCountries = realCountries.filter(c => !assignedCountries.has(c.name));
+
+            if (availableCountries.length === 0) {
+                // If all countries are assigned, pick random from all
+                const randomIdx = Math.floor(Math.random() * realCountries.length);
+                return realCountries[randomIdx];
+            }
+
+            // Calculate total GDP of available countries
+            const totalGdp = availableCountries.reduce((sum, c) => sum + c.gdp, 0);
+
+            // Random selection weighted by GDP
+            let random = Math.random() * totalGdp;
+            let cumulative = 0;
+
+            for (const country of availableCountries) {
+                cumulative += country.gdp;
+                if (random <= cumulative) {
+                    assignedCountries.add(country.name);
+                    return country;
+                }
+            }
+
+            // Fallback to last available country
+            const lastCountry = availableCountries[availableCountries.length - 1];
+            assignedCountries.add(lastCountry.name);
+            return lastCountry;
+        }
+
         function getPoliticalPosition(name) {
-            // Bonbon is always Right Wing
+            // This function is now used as fallback only
+            // Bonbon is always Right Wing (Czech Republic's position is Middle, but Bonbon stays Right Wing)
             if (name.toLowerCase() === 'bonbon') {
                 return 'Right Wing';
             }
 
-            // Random assignment for others
+            // Random assignment for others (fallback)
             const positions = ['Hard Left Wing', 'Left Wing', 'Middle', 'Right Wing', 'Hard Right Wing'];
             return positions[Math.floor(Math.random() * positions.length)];
         }
@@ -2714,13 +2813,19 @@
             }
 
             const name = nameInput.value.trim() || `Entry ${entryId + 1}`;
-            const position = getPoliticalPosition(name);
+
+            // Assign a real country based on GDP-weighted probability
+            const realCountry = assignRealCountry(name);
+
+            // Bonbon keeps Right Wing position, others inherit from real country
+            const position = name.toLowerCase() === 'bonbon' ? 'Right Wing' : realCountry.position;
 
             entries.push({
                 id: entryId++,
                 name: name,
                 votes: votes,
-                position: position
+                position: position,
+                realCountry: realCountry.name
             });
 
             // Clear inputs
@@ -2732,6 +2837,11 @@
         }
 
         function removeEntry(id) {
+            // Find the entry to get its real country before removing
+            const entryToRemove = entries.find(entry => entry.id === id);
+            if (entryToRemove && entryToRemove.realCountry) {
+                assignedCountries.delete(entryToRemove.realCountry);
+            }
             entries = entries.filter(entry => entry.id !== id);
             renderResults();
         }
@@ -2745,6 +2855,8 @@
                 royalsVoted = false;
                 savedKing = null;
                 savedQueen = null;
+                // Reset assigned countries
+                assignedCountries.clear();
                 renderResults();
             }
         }
@@ -2851,10 +2963,11 @@
                 const minPercentageClass = minMeetsThreshold ? 'color: #28a745;' : 'color: #dc3545;';
                 const positionClass = getPositionClass(entry.position || 'Middle');
                 const positionBadge = `<span class="position-badge ${positionClass}">${entry.position || 'Unknown'}</span>`;
+                const realCountryDisplay = entry.realCountry ? `<div style="font-size: 0.8rem; color: #ffd700; margin-top: 4px;">🌍 ${escapeHTML(entry.realCountry)}</div>` : '';
 
                 tableHTML += `
                     <tr class="${rowClass}">
-                        <td>${escapeHTML(entry.name)}</td>
+                        <td>${escapeHTML(entry.name)}${realCountryDisplay}</td>
                         <td>${positionBadge}</td>
                         <td>${formatNumber(entry.votes)}</td>
                         <td>
@@ -2894,7 +3007,7 @@
             const maxVotes = (minVotes * remainingCountries) + totalVotes;
 
             // CSV header
-            const headers = ['Country', 'Position', 'Votes', 'Percentage', 'Min Percentage', 'Status'];
+            const headers = ['Country', 'Real Country', 'Position', 'Votes', 'Percentage', 'Min Percentage', 'Status'];
 
             // Sort entries by votes descending
             const sortedEntries = [...entries].sort((a, b) => b.votes - a.votes);
@@ -2910,8 +3023,11 @@
                     ? `"${entry.name.replace(/"/g, '""')}"`
                     : entry.name;
 
+                const escapedRealCountry = entry.realCountry || 'Unknown';
+
                 return [
                     escapedName,
+                    escapedRealCountry,
                     entry.position || 'Unknown',
                     entry.votes,
                     percentage.toFixed(2) + '%',
@@ -3109,12 +3225,18 @@
             if (scannedEntries.length === 0) return;
 
             scannedEntries.forEach(entry => {
-                const position = getPoliticalPosition(entry.name);
+                // Assign a real country based on GDP-weighted probability
+                const realCountry = assignRealCountry(entry.name);
+
+                // Bonbon keeps Right Wing position, others inherit from real country
+                const position = entry.name.toLowerCase() === 'bonbon' ? 'Right Wing' : realCountry.position;
+
                 entries.push({
                     id: entryId++,
                     name: entry.name,
                     votes: entry.votes,
-                    position: position
+                    position: position,
+                    realCountry: realCountry.name
                 });
             });
 
