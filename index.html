@@ -1339,6 +1339,53 @@
             font-size: 0.9rem;
         }
 
+        .royal-position {
+            font-size: 0.85rem;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .royal-status-badges {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .royal-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .royal-badge.qualified {
+            background: rgba(40, 167, 69, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(40, 167, 69, 0.4);
+        }
+
+        .royal-badge.not-qualified {
+            background: rgba(220, 53, 69, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(220, 53, 69, 0.4);
+        }
+
+        .royal-badge.in-government {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+        }
+
+        .royal-badge.opposition {
+            background: rgba(108, 117, 125, 0.2);
+            color: #a0a0a0;
+            border: 1px solid rgba(108, 117, 125, 0.4);
+        }
+
         .royal-chance {
             color: #ffd700;
             font-size: 0.8rem;
@@ -1620,6 +1667,11 @@
                                 <span class="royal-country-dot" id="kingCountryDot"></span>
                                 <span class="royal-country-name" id="kingCountry">-</span>
                             </div>
+                            <div class="royal-position" id="kingPosition">-</div>
+                            <div class="royal-status-badges">
+                                <span class="royal-badge" id="kingQualified"></span>
+                                <span class="royal-badge" id="kingGovernment"></span>
+                            </div>
                             <div class="royal-chance" id="kingChance">-</div>
                         </div>
                         <div class="royal-card" id="queenCard">
@@ -1629,6 +1681,11 @@
                             <div class="royal-country">
                                 <span class="royal-country-dot" id="queenCountryDot"></span>
                                 <span class="royal-country-name" id="queenCountry">-</span>
+                            </div>
+                            <div class="royal-position" id="queenPosition">-</div>
+                            <div class="royal-status-badges">
+                                <span class="royal-badge" id="queenQualified"></span>
+                                <span class="royal-badge" id="queenGovernment"></span>
                             </div>
                             <div class="royal-chance" id="queenChance">-</div>
                         </div>
@@ -2217,17 +2274,47 @@
                 return;
             }
 
+            // Helper function to update royal status display
+            function updateRoyalStatusDisplay(prefix, data) {
+                // Position
+                const positionEl = document.getElementById(`${prefix}Position`);
+                positionEl.textContent = data.position;
+                positionEl.className = `royal-position position-badge ${getPositionClass(data.position)}`;
+
+                // Qualified badge
+                const qualifiedEl = document.getElementById(`${prefix}Qualified`);
+                if (data.isQualified) {
+                    qualifiedEl.textContent = '✓ Qualified';
+                    qualifiedEl.className = 'royal-badge qualified';
+                } else {
+                    qualifiedEl.textContent = '✗ Not Qualified';
+                    qualifiedEl.className = 'royal-badge not-qualified';
+                }
+
+                // Government badge
+                const govEl = document.getElementById(`${prefix}Government`);
+                if (data.inGovernment) {
+                    govEl.textContent = '🏛️ In Government';
+                    govEl.className = 'royal-badge in-government';
+                } else {
+                    govEl.textContent = 'Opposition';
+                    govEl.className = 'royal-badge opposition';
+                }
+            }
+
             // If already voted, display saved royals
             if (royalsVoted && savedKing && savedQueen) {
                 document.getElementById('kingName').textContent = savedKing.name;
                 document.getElementById('kingCountry').textContent = savedKing.country;
                 document.getElementById('kingCountryDot').style.background = savedKing.color;
                 document.getElementById('kingChance').textContent = `${savedKing.chance}% chance`;
+                updateRoyalStatusDisplay('king', savedKing);
 
                 document.getElementById('queenName').textContent = savedQueen.name;
                 document.getElementById('queenCountry').textContent = savedQueen.country;
                 document.getElementById('queenCountryDot').style.background = savedQueen.color;
                 document.getElementById('queenChance').textContent = `${savedQueen.chance}% chance`;
+                updateRoyalStatusDisplay('queen', savedQueen);
 
                 voteBtn.style.display = 'none';
                 votedStatus.style.display = 'block';
@@ -2238,9 +2325,12 @@
             // Get parties with colors from currentAllocation
             const partiesWithColors = entries.map(entry => {
                 const allocated = currentAllocation.find(a => a.id === entry.id);
+                const percentage = calculatePercentage(entry.votes, totalVotes);
                 return {
                     ...entry,
-                    color: allocated ? allocated.color : '#888'
+                    color: allocated ? allocated.color : '#888',
+                    isQualified: percentage >= threshold,
+                    inGovernment: selectedParties.has(entry.id)
                 };
             });
 
@@ -2264,12 +2354,22 @@
             document.getElementById('kingCountry').textContent = kingSelection.party.name;
             document.getElementById('kingCountryDot').style.background = kingSelection.party.color;
             document.getElementById('kingChance').textContent = `${kingSelection.percentage.toFixed(1)}% chance`;
+            updateRoyalStatusDisplay('king', {
+                position: kingSelection.party.position || 'Unknown',
+                isQualified: kingSelection.party.isQualified,
+                inGovernment: kingSelection.party.inGovernment
+            });
 
             // Update Queen display
             document.getElementById('queenName').textContent = queenName;
             document.getElementById('queenCountry').textContent = queenSelection.party.name;
             document.getElementById('queenCountryDot').style.background = queenSelection.party.color;
             document.getElementById('queenChance').textContent = `${queenSelection.percentage.toFixed(1)}% chance`;
+            updateRoyalStatusDisplay('queen', {
+                position: queenSelection.party.position || 'Unknown',
+                isQualified: queenSelection.party.isQualified,
+                inGovernment: queenSelection.party.inGovernment
+            });
 
             // Show vote button, hide voted status
             voteBtn.style.display = 'inline-block';
@@ -2279,18 +2379,29 @@
         }
 
         function voteForRoyals() {
-            // Save current displayed royals
+            // Save current displayed royals including status data
+            const kingQualifiedEl = document.getElementById('kingQualified');
+            const kingGovEl = document.getElementById('kingGovernment');
+            const queenQualifiedEl = document.getElementById('queenQualified');
+            const queenGovEl = document.getElementById('queenGovernment');
+
             savedKing = {
                 name: document.getElementById('kingName').textContent,
                 country: document.getElementById('kingCountry').textContent,
                 color: document.getElementById('kingCountryDot').style.background,
-                chance: document.getElementById('kingChance').textContent.replace('% chance', '')
+                chance: document.getElementById('kingChance').textContent.replace('% chance', ''),
+                position: document.getElementById('kingPosition').textContent,
+                isQualified: kingQualifiedEl.classList.contains('qualified'),
+                inGovernment: kingGovEl.classList.contains('in-government')
             };
             savedQueen = {
                 name: document.getElementById('queenName').textContent,
                 country: document.getElementById('queenCountry').textContent,
                 color: document.getElementById('queenCountryDot').style.background,
-                chance: document.getElementById('queenChance').textContent.replace('% chance', '')
+                chance: document.getElementById('queenChance').textContent.replace('% chance', ''),
+                position: document.getElementById('queenPosition').textContent,
+                isQualified: queenQualifiedEl.classList.contains('qualified'),
+                inGovernment: queenGovEl.classList.contains('in-government')
             };
 
             royalsVoted = true;
