@@ -225,6 +225,23 @@
             transform: translateY(-2px);
         }
 
+        .btn-resave-entry {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-resave-entry:hover {
+            background: rgba(34, 197, 94, 0.4);
+            transform: translateY(-2px);
+        }
+
         .country-stats-section {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
@@ -452,6 +469,7 @@
                         <div class="history-entry-header">
                             <span class="history-year">Year ${entry.year}</span>
                             <a href="index.html?historyIndex=${originalIndex}" class="btn-view-detail">View Detail</a>
+                            <button class="btn-resave-entry" onclick="resaveEntry(${originalIndex})">🔄 Re-save</button>
                             <button class="btn-delete-entry" onclick="deleteEntry(${originalIndex})">🗑️ Delete</button>
                             <span class="history-date">Saved: ${savedDate}</span>
                         </div>
@@ -723,6 +741,111 @@
                 history.splice(index, 1);
                 localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
                 renderHistory();
+            }
+        }
+
+        function resaveEntry(index) {
+            if (index < 0 || index >= history.length) return;
+            const entry = history[index];
+
+            // Load current entries from main storage to get realCountry data
+            const mainStorageKey = 'electionCalculatorData';
+            const mainData = localStorage.getItem(mainStorageKey);
+            let entries = [];
+            let savedKing = null;
+            let savedQueen = null;
+
+            if (mainData) {
+                const parsed = JSON.parse(mainData);
+                entries = parsed.entries || [];
+                savedKing = parsed.savedKing || null;
+                savedQueen = parsed.savedQueen || null;
+            }
+
+            let updated = false;
+
+            // Update PM realCountry
+            if (entry.primeMinister && !entry.primeMinister.realCountry) {
+                const pmParty = entries.find(e => e.name === entry.primeMinister.name);
+                if (pmParty && pmParty.realCountry) {
+                    entry.primeMinister.realCountry = pmParty.realCountry;
+                    updated = true;
+                }
+            }
+
+            // Update King realCountry
+            if (entry.king && !entry.king.realCountry) {
+                // Try savedKing first
+                if (savedKing && savedKing.realCountry && savedKing.country === entry.king.country) {
+                    entry.king.realCountry = savedKing.realCountry;
+                    updated = true;
+                } else {
+                    // Look up from entries
+                    const kingParty = entries.find(e => e.name === entry.king.country);
+                    if (kingParty && kingParty.realCountry) {
+                        entry.king.realCountry = kingParty.realCountry;
+                        updated = true;
+                    }
+                }
+            }
+
+            // Update Queen realCountry
+            if (entry.queen && !entry.queen.realCountry) {
+                // Try savedQueen first
+                if (savedQueen && savedQueen.realCountry && savedQueen.country === entry.queen.country) {
+                    entry.queen.realCountry = savedQueen.realCountry;
+                    updated = true;
+                } else {
+                    // Look up from entries
+                    const queenParty = entries.find(e => e.name === entry.queen.country);
+                    if (queenParty && queenParty.realCountry) {
+                        entry.queen.realCountry = queenParty.realCountry;
+                        updated = true;
+                    }
+                }
+            }
+
+            // Update Opposition Leader realCountry
+            if (entry.oppositionLeader && !entry.oppositionLeader.realCountry) {
+                const oppParty = entries.find(e => e.name === entry.oppositionLeader.name);
+                if (oppParty && oppParty.realCountry) {
+                    entry.oppositionLeader.realCountry = oppParty.realCountry;
+                    updated = true;
+                }
+            }
+
+            // Update qualified parties realCountry
+            if (entry.qualifiedParties) {
+                entry.qualifiedParties.forEach(qp => {
+                    if (!qp.realCountry) {
+                        const match = entries.find(e => e.name === qp.name);
+                        if (match && match.realCountry) {
+                            qp.realCountry = match.realCountry;
+                            updated = true;
+                        }
+                    }
+                });
+            }
+
+            // Update coalition parties realCountry
+            if (entry.coalitionParties) {
+                entry.coalitionParties.forEach(cp => {
+                    if (!cp.realCountry) {
+                        const match = entries.find(e => e.name === cp.name);
+                        if (match && match.realCountry) {
+                            cp.realCountry = match.realCountry;
+                            updated = true;
+                        }
+                    }
+                });
+            }
+
+            if (updated) {
+                localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+                renderHistory();
+                alert(`Year ${entry.year} updated with real country data!`);
+            } else {
+                alert(`No updates needed for Year ${entry.year}. Real country data already complete or source data not available.`);
             }
         }
 
