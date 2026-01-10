@@ -1960,7 +1960,16 @@
         const HISTORY_STORAGE_KEY = 'electionCalculatorHistory';
 
         function saveToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries, entryId, threshold, totalCountries, parliamentSeats }));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                entries,
+                entryId,
+                threshold,
+                totalCountries,
+                parliamentSeats,
+                royalsVoted,
+                savedKing,
+                savedQueen
+            }));
         }
 
         function saveHistoryToStorage() {
@@ -1976,6 +1985,9 @@
                 threshold = parsed.threshold !== undefined ? parsed.threshold : 5;
                 totalCountries = parsed.totalCountries || 0;
                 parliamentSeats = parsed.parliamentSeats || 200;
+                royalsVoted = parsed.royalsVoted || false;
+                savedKing = parsed.savedKing || null;
+                savedQueen = parsed.savedQueen || null;
                 document.getElementById('threshold').value = threshold;
                 document.getElementById('totalCountries').value = totalCountries;
                 document.getElementById('parliamentSeats').value = parliamentSeats;
@@ -1986,6 +1998,14 @@
             if (historyData) {
                 history = JSON.parse(historyData);
             }
+
+            // Rebuild assignedCountries from entries
+            assignedCountries.clear();
+            entries.forEach(entry => {
+                if (entry.realCountry) {
+                    assignedCountries.add(entry.realCountry);
+                }
+            });
         }
 
         function updateThreshold() {
@@ -2654,6 +2674,9 @@
             // Update UI
             document.getElementById('voteRoyalBtn').style.display = 'none';
             document.getElementById('royalVotedStatus').style.display = 'block';
+
+            // Persist to storage so royals survive refresh
+            saveToStorage();
         }
 
         function saveToHistory() {
