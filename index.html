@@ -2707,6 +2707,32 @@
             const oppositionLeader = nonCoalitionParties.length > 0 ?
                 nonCoalitionParties.reduce((a, b) => a.seats > b.seats ? a : b) : null;
 
+            // Calculate committee assignments using D'Hondt method
+            const committeeAllocation = qualifiedParties.map(p => ({ ...p, committees: 0 }));
+            const committeeAssignments = [];
+
+            for (let i = 0; i < parliamentaryCommittees.length; i++) {
+                let maxQuotient = -1;
+                let winnerIndex = 0;
+
+                committeeAllocation.forEach((party, index) => {
+                    const quotient = party.seats / (party.committees + 1);
+                    if (quotient > maxQuotient) {
+                        maxQuotient = quotient;
+                        winnerIndex = index;
+                    }
+                });
+
+                committeeAllocation[winnerIndex].committees++;
+                committeeAssignments.push({
+                    committeeName: parliamentaryCommittees[i].name,
+                    committeeIcon: parliamentaryCommittees[i].icon,
+                    partyName: committeeAllocation[winnerIndex].name,
+                    partyColor: committeeAllocation[winnerIndex].color,
+                    partyPosition: committeeAllocation[winnerIndex].position
+                });
+            }
+
             // Create history entry
             const historyEntry = {
                 year: year,
@@ -2754,6 +2780,9 @@
                     color: oppositionLeader.color,
                     position: oppositionLeader.position
                 } : null,
+
+                // Parliamentary Committees
+                committees: committeeAssignments,
 
                 // Royal Court - capture from DOM if displayed
                 king: null,
@@ -2917,6 +2946,22 @@
                                             </li>
                                         `).join('')}
                                     </ul>
+                                </div>
+                            </div>
+
+                            <!-- Parliamentary Committees -->
+                            <div class="history-card" style="grid-column: span 2;">
+                                <h4>🏛️ Parliamentary Committees (${entry.committees ? entry.committees.length : 0})</h4>
+                                <div class="history-card-content">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+                                        ${entry.committees ? entry.committees.map(c => `
+                                            <div style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: rgba(0,0,0,0.2); border-radius: 6px; border-left: 3px solid ${c.partyColor};">
+                                                <span>${c.committeeIcon}</span>
+                                                <span style="font-size: 0.8rem;">${c.committeeName}</span>
+                                                <span class="history-party-dot" style="background: ${c.partyColor}; margin-left: auto;"></span>
+                                            </div>
+                                        `).join('') : '<div>No committees</div>'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
