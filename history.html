@@ -406,6 +406,10 @@
                     <h3>🏛️ Committee Chairs</h3>
                     <ul id="committeeRanking" class="country-ranking"></ul>
                 </div>
+                <div class="country-stat-card">
+                    <h3>🤝 Government Participation</h3>
+                    <ul id="coalitionRanking" class="country-ranking"></ul>
+                </div>
             </div>
         </div>
 
@@ -690,11 +694,30 @@
                 }
             });
 
+            // Calculate coalition participation (any country in government coalition)
+            const coalitionCounts = {};
+            history.forEach(entry => {
+                if (entry.coalitionParties) {
+                    entry.coalitionParties.forEach(cp => {
+                        // Use saved realCountry, or look up from qualified parties
+                        let realCountry = cp.realCountry;
+                        if (!realCountry && entry.qualifiedParties) {
+                            const match = entry.qualifiedParties.find(p => p.name === cp.name);
+                            realCountry = match ? match.realCountry : null;
+                        }
+                        if (realCountry) {
+                            coalitionCounts[realCountry] = (coalitionCounts[realCountry] || 0) + 1;
+                        }
+                    });
+                }
+            });
+
             // Render rankings
             renderRanking('govRuleRanking', govRuleCounts, 'terms');
             renderRanking('royalRanking', royalCounts, 'appearances');
             renderRanking('oppositionRanking', oppositionCounts, 'terms');
             renderRanking('committeeRanking', committeeCounts, 'chairs');
+            renderRanking('coalitionRanking', coalitionCounts, 'times');
         }
 
         function renderRanking(elementId, counts, unit) {
