@@ -2314,28 +2314,31 @@
             const committeesGrid = document.getElementById('committeesGrid');
             const committeesSection = document.getElementById('committeesSection');
 
-            if (!committeesGrid || !entry.committees || entry.committees.length === 0) {
+            if (!committeesGrid) {
+                console.log('committeesGrid not found');
+                return;
+            }
+
+            if (!entry.committees || entry.committees.length === 0) {
+                console.log('No committees in entry:', entry);
                 if (committeesSection) committeesSection.style.display = 'none';
                 return;
             }
 
-            committeesSection.style.display = 'block';
+            if (committeesSection) committeesSection.style.display = 'block';
 
-            let html = '';
-            entry.committees.forEach(c => {
-                html += `
-                    <div class="committee-card">
-                        <span class="committee-icon">${c.committeeIcon}</span>
-                        <span class="committee-name">${c.committeeName}</span>
-                        <span class="committee-party">
-                            <span class="party-dot" style="background: ${c.partyColor};"></span>
-                            ${c.partyName}
-                        </span>
+            const positionClass = (pos) => getPositionClass(pos || 'Middle');
+
+            committeesGrid.innerHTML = entry.committees.map(c => `
+                <div class="committee-card" style="border-left-color: ${c.partyColor};">
+                    <div class="committee-icon">${c.committeeIcon}</div>
+                    <div class="committee-info">
+                        <div class="committee-name">${c.committeeName}</div>
+                        <div class="committee-chair">Chair: ${escapeHTML(c.partyName)}</div>
+                        <span class="position-badge ${positionClass(c.partyPosition)}" style="font-size: 0.6rem; margin-top: 3px;">${c.partyPosition || 'Unknown'}</span>
                     </div>
-                `;
-            });
-
-            committeesGrid.innerHTML = html;
+                </div>
+            `).join('');
         }
 
         // Load Royal Court from history
