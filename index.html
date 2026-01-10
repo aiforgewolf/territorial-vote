@@ -2581,6 +2581,7 @@
                         <span class="coalition-party-tag">
                             <span class="dot" style="background: ${party.color};"></span>
                             ${escapeHTML(party.name)} (${party.seats})
+                            ${party.realCountry ? `<span style="color: #ffd700; font-size: 0.75rem; margin-left: 3px;">🌍 ${party.realCountry}</span>` : ''}
                             <span class="position-badge ${positionClass}" style="margin-left: 5px; font-size: 0.65rem;">${party.position || 'Unknown'}</span>
                         </span>
                     `;
@@ -2620,6 +2621,7 @@
                         <div class="party-color" style="background: ${leader.color};"></div>
                         <div class="party-info">
                             <div class="party-name">${escapeHTML(leader.name)}</div>
+                            ${leader.realCountry ? `<div style="color: #ffd700; font-size: 0.75rem;">🌍 ${leader.realCountry}</div>` : ''}
                             <span class="position-badge ${positionClass}" style="font-size: 0.7rem;">${leader.position || 'Unknown'}</span>
                         </div>
                         <div class="party-seats">${leader.seats} seats</div>
@@ -2714,6 +2716,7 @@
                     <div class="minister-icon" style="background: ${sortedParties[0].color};">👑</div>
                     <div class="minister-title">Prime Minister</div>
                     <div class="minister-party">${escapeHTML(sortedParties[0].name)}</div>
+                    ${sortedParties[0].realCountry ? `<div style="color: #ffd700; font-size: 0.75rem; margin-top: 3px;">🌍 ${sortedParties[0].realCountry}</div>` : ''}
                     <span class="position-badge ${pmPositionClass}" style="font-size: 0.65rem; margin-top: 5px;">${sortedParties[0].position || 'Unknown'}</span>
                 </div>
             `;
@@ -2730,6 +2733,7 @@
                             <div class="minister-icon" style="background: ${party.color};">🏛️</div>
                             <div class="minister-title">${ministerTitles[ministerIndex]}</div>
                             <div class="minister-party">${escapeHTML(party.name)}</div>
+                            ${party.realCountry ? `<div style="color: #ffd700; font-size: 0.7rem; margin-top: 2px;">🌍 ${party.realCountry}</div>` : ''}
                             <span class="position-badge ${positionClass}" style="font-size: 0.65rem; margin-top: 5px;">${party.position || 'Unknown'}</span>
                         </div>
                     `;
@@ -2764,7 +2768,7 @@
                     return `
                         <div class="gov-party-share">
                             <span class="dot" style="background: ${party.color};"></span>
-                            <span>${escapeHTML(party.name)}:</span>
+                            <span>${escapeHTML(party.name)}${party.realCountry ? ` <span style="color: #ffd700; font-size: 0.8rem;">(${party.realCountry})</span>` : ''}:</span>
                             <span class="count">${party.ministers}</span>
                             <span class="position-badge ${positionClass}" style="font-size: 0.6rem; margin-left: 5px;">${party.position || 'Unknown'}</span>
                         </div>
@@ -2857,6 +2861,7 @@
                         <div class="committee-info">
                             <div class="committee-name">${assignment.committee.name}</div>
                             <div class="committee-chair">Chair: ${escapeHTML(assignment.party.name)}</div>
+                            ${assignment.party.realCountry ? `<div style="color: #ffd700; font-size: 0.7rem;">🌍 ${assignment.party.realCountry}</div>` : ''}
                             <span class="position-badge ${positionClass}" style="font-size: 0.6rem; margin-top: 3px;">${assignment.party.position || 'Unknown'}</span>
                         </div>
                     </div>
