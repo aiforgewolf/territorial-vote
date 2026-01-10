@@ -242,6 +242,25 @@
             transform: translateY(-2px);
         }
 
+        .btn-update-position {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-update-position:hover {
+            background: rgba(59, 130, 246, 0.4);
+        }
+
         .country-stats-section {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
@@ -415,6 +434,10 @@
 
         <div id="historyContent" class="history-content"></div>
 
+        <button id="updatePositionBtn" class="btn-update-position" onclick="updateCountryPosition()" style="display: none;">
+            🔄 Update Country Position
+        </button>
+
         <button id="clearBtn" class="btn-clear-history" onclick="clearHistory()" style="display: none;">
             Clear All History
         </button>
@@ -435,6 +458,7 @@
         function renderHistory() {
             const historyContent = document.getElementById('historyContent');
             const clearBtn = document.getElementById('clearBtn');
+            const updatePositionBtn = document.getElementById('updatePositionBtn');
             const totalYearsEl = document.getElementById('totalYears');
             const totalGovernmentsEl = document.getElementById('totalGovernments');
             const totalPMsEl = document.getElementById('totalPMs');
@@ -457,10 +481,12 @@
                     </div>
                 `;
                 clearBtn.style.display = 'none';
+                updatePositionBtn.style.display = 'none';
                 return;
             }
 
             clearBtn.style.display = 'block';
+            updatePositionBtn.style.display = 'block';
 
             // Render history entries in reverse chronological order
             let html = '';
@@ -869,6 +895,102 @@
                 alert(`Year ${entry.year} updated with real country data!`);
             } else {
                 alert(`No updates needed for Year ${entry.year}. Real country data already complete or source data not available.`);
+            }
+        }
+
+        function updateCountryPosition() {
+            const validPositions = ['Hard Left Wing', 'Left Wing', 'Middle', 'Right Wing', 'Hard Right Wing'];
+
+            const countryName = prompt('Enter the country name to update (e.g., Russia, France, Germany):');
+            if (!countryName || countryName.trim() === '') {
+                return;
+            }
+
+            const newPosition = prompt(
+                `Enter the new political position for ${countryName}:\n\n` +
+                'Options:\n' +
+                '- Hard Left Wing\n' +
+                '- Left Wing\n' +
+                '- Middle\n' +
+                '- Right Wing\n' +
+                '- Hard Right Wing'
+            );
+
+            if (!newPosition || newPosition.trim() === '') {
+                return;
+            }
+
+            if (!validPositions.includes(newPosition)) {
+                alert('Invalid position. Please use one of: ' + validPositions.join(', '));
+                return;
+            }
+
+            let updateCount = 0;
+            const trimmedCountry = countryName.trim();
+
+            history.forEach(entry => {
+                // Update PM position
+                if (entry.primeMinister && entry.primeMinister.realCountry === trimmedCountry) {
+                    entry.primeMinister.position = newPosition;
+                    updateCount++;
+                }
+
+                // Update Opposition Leader position
+                if (entry.oppositionLeader && entry.oppositionLeader.realCountry === trimmedCountry) {
+                    entry.oppositionLeader.position = newPosition;
+                    updateCount++;
+                }
+
+                // Update qualified parties positions
+                if (entry.qualifiedParties) {
+                    entry.qualifiedParties.forEach(p => {
+                        if (p.realCountry === trimmedCountry) {
+                            p.position = newPosition;
+                            updateCount++;
+                        }
+                    });
+                }
+
+                // Update coalition parties positions
+                if (entry.coalitionParties) {
+                    entry.coalitionParties.forEach(p => {
+                        if (p.realCountry === trimmedCountry) {
+                            p.position = newPosition;
+                            updateCount++;
+                        }
+                    });
+                }
+
+                // Update government ministers positions
+                if (entry.governmentMinisters) {
+                    entry.governmentMinisters.forEach(m => {
+                        if (m.realCountry === trimmedCountry) {
+                            m.position = newPosition;
+                            updateCount++;
+                        }
+                    });
+                }
+
+                // Update committee chair positions
+                if (entry.committees) {
+                    entry.committees.forEach(c => {
+                        // Find the party in qualifiedParties to check realCountry
+                        const party = entry.qualifiedParties ?
+                            entry.qualifiedParties.find(p => p.name === c.partyName) : null;
+                        if (party && party.realCountry === trimmedCountry) {
+                            c.partyPosition = newPosition;
+                            updateCount++;
+                        }
+                    });
+                }
+            });
+
+            if (updateCount > 0) {
+                localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+                renderHistory();
+                alert(`Updated ${updateCount} entries for ${trimmedCountry} to "${newPosition}"`);
+            } else {
+                alert(`No entries found for country "${trimmedCountry}". Make sure you entered the exact country name.`);
             }
         }
 
