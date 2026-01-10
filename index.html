@@ -3097,9 +3097,16 @@
             const queenQualifiedEl = document.getElementById('queenQualified');
             const queenGovEl = document.getElementById('queenGovernment');
 
+            // Get party names and look up real countries
+            const kingCountryName = document.getElementById('kingCountry').textContent;
+            const queenCountryName = document.getElementById('queenCountry').textContent;
+            const kingEntry = entries.find(e => e.name === kingCountryName);
+            const queenEntry = entries.find(e => e.name === queenCountryName);
+
             savedKing = {
                 name: document.getElementById('kingName').textContent,
-                country: document.getElementById('kingCountry').textContent,
+                country: kingCountryName,
+                realCountry: kingEntry ? kingEntry.realCountry : null,
                 color: document.getElementById('kingCountryDot').style.background,
                 chance: document.getElementById('kingChance').textContent.replace('% chance', ''),
                 position: document.getElementById('kingPosition').textContent,
@@ -3108,7 +3115,8 @@
             };
             savedQueen = {
                 name: document.getElementById('queenName').textContent,
-                country: document.getElementById('queenCountry').textContent,
+                country: queenCountryName,
+                realCountry: queenEntry ? queenEntry.realCountry : null,
                 color: document.getElementById('queenCountryDot').style.background,
                 chance: document.getElementById('queenChance').textContent.replace('% chance', ''),
                 position: document.getElementById('queenPosition').textContent,
@@ -3274,12 +3282,16 @@
 
                 if (kingName && kingName !== '-') {
                     const kingCountryName = document.getElementById('kingCountry').textContent;
-                    // Look up real country from entries (includes unqualified parties)
-                    const kingEntry = entries.find(e => e.name === kingCountryName);
+                    // Use savedKing.realCountry if available (from voteForRoyals), otherwise look up
+                    let kingRealCountry = savedKing ? savedKing.realCountry : null;
+                    if (!kingRealCountry) {
+                        const kingEntry = entries.find(e => e.name === kingCountryName);
+                        kingRealCountry = kingEntry ? kingEntry.realCountry : null;
+                    }
                     historyEntry.king = {
                         name: kingName,
                         country: kingCountryName,
-                        realCountry: kingEntry ? kingEntry.realCountry : null,
+                        realCountry: kingRealCountry,
                         color: document.getElementById('kingCountryDot').style.background,
                         position: document.getElementById('kingPosition').textContent,
                         isQualified: document.getElementById('kingQualified').classList.contains('qualified'),
@@ -3289,12 +3301,16 @@
 
                 if (queenName && queenName !== '-') {
                     const queenCountryName = document.getElementById('queenCountry').textContent;
-                    // Look up real country from entries (includes unqualified parties)
-                    const queenEntry = entries.find(e => e.name === queenCountryName);
+                    // Use savedQueen.realCountry if available (from voteForRoyals), otherwise look up
+                    let queenRealCountry = savedQueen ? savedQueen.realCountry : null;
+                    if (!queenRealCountry) {
+                        const queenEntry = entries.find(e => e.name === queenCountryName);
+                        queenRealCountry = queenEntry ? queenEntry.realCountry : null;
+                    }
                     historyEntry.queen = {
                         name: queenName,
                         country: queenCountryName,
-                        realCountry: queenEntry ? queenEntry.realCountry : null,
+                        realCountry: queenRealCountry,
                         color: document.getElementById('queenCountryDot').style.background,
                         position: document.getElementById('queenPosition').textContent,
                         isQualified: document.getElementById('queenQualified').classList.contains('qualified'),
