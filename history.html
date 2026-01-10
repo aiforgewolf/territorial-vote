@@ -443,6 +443,32 @@
             </div>
         </div>
 
+        <div id="wingStatsSection" class="country-stats-section" style="display: none;">
+            <h2>🏳️ Wing Statistics</h2>
+            <div class="country-stats-grid">
+                <div class="country-stat-card">
+                    <h3><a href="country-stats.html?stat=wingGovRule" class="stat-link">🏛️ Government Rule</a></h3>
+                    <ul id="wingGovRuleRanking" class="country-ranking"></ul>
+                </div>
+                <div class="country-stat-card">
+                    <h3><a href="country-stats.html?stat=wingRoyal" class="stat-link">👑 Royal Court</a></h3>
+                    <ul id="wingRoyalRanking" class="country-ranking"></ul>
+                </div>
+                <div class="country-stat-card">
+                    <h3><a href="country-stats.html?stat=wingOpposition" class="stat-link">📢 Opposition</a></h3>
+                    <ul id="wingOppositionRanking" class="country-ranking"></ul>
+                </div>
+                <div class="country-stat-card">
+                    <h3><a href="country-stats.html?stat=wingCommittee" class="stat-link">🏛️ Committees</a></h3>
+                    <ul id="wingCommitteeRanking" class="country-ranking"></ul>
+                </div>
+                <div class="country-stat-card">
+                    <h3><a href="country-stats.html?stat=wingCoalition" class="stat-link">🤝 Participation</a></h3>
+                    <ul id="wingCoalitionRanking" class="country-ranking"></ul>
+                </div>
+            </div>
+        </div>
+
         <div id="historyContent" class="history-content"></div>
 
         <button id="updatePositionBtn" class="btn-update-position" onclick="updateCountryPosition()" style="display: none;">
@@ -761,6 +787,105 @@
             renderRanking('oppositionRanking', oppositionCounts, 'terms');
             renderRanking('committeeRanking', committeeCounts, 'chairs');
             renderRanking('coalitionRanking', coalitionCounts, 'times');
+
+            // Render wing statistics
+            renderWingStats();
+        }
+
+        function renderWingStats() {
+            const wingStatsSection = document.getElementById('wingStatsSection');
+
+            if (history.length === 0) {
+                wingStatsSection.style.display = 'none';
+                return;
+            }
+
+            wingStatsSection.style.display = 'block';
+
+            // Calculate wing government rule (PM's position)
+            const wingGovRuleCounts = {};
+            history.forEach(entry => {
+                if (entry.primeMinister && entry.primeMinister.position) {
+                    const wing = entry.primeMinister.position;
+                    wingGovRuleCounts[wing] = (wingGovRuleCounts[wing] || 0) + 1;
+                }
+            });
+
+            // Calculate wing royal court (King + Queen positions)
+            const wingRoyalCounts = {};
+            history.forEach(entry => {
+                if (entry.king && entry.king.country) {
+                    // Look up position from qualified parties
+                    let position = null;
+                    if (entry.qualifiedParties) {
+                        const kingParty = entry.qualifiedParties.find(p => p.name === entry.king.country);
+                        position = kingParty ? kingParty.position : null;
+                    }
+                    if (position) {
+                        wingRoyalCounts[position] = (wingRoyalCounts[position] || 0) + 1;
+                    }
+                }
+                if (entry.queen && entry.queen.country) {
+                    let position = null;
+                    if (entry.qualifiedParties) {
+                        const queenParty = entry.qualifiedParties.find(p => p.name === entry.queen.country);
+                        position = queenParty ? queenParty.position : null;
+                    }
+                    if (position) {
+                        wingRoyalCounts[position] = (wingRoyalCounts[position] || 0) + 1;
+                    }
+                }
+            });
+
+            // Calculate wing opposition leadership
+            const wingOppositionCounts = {};
+            history.forEach(entry => {
+                if (entry.oppositionLeader && entry.oppositionLeader.position) {
+                    const wing = entry.oppositionLeader.position;
+                    wingOppositionCounts[wing] = (wingOppositionCounts[wing] || 0) + 1;
+                }
+            });
+
+            // Calculate wing committee chairs
+            const wingCommitteeCounts = {};
+            history.forEach(entry => {
+                if (entry.committees) {
+                    entry.committees.forEach(c => {
+                        if (c.partyPosition) {
+                            wingCommitteeCounts[c.partyPosition] = (wingCommitteeCounts[c.partyPosition] || 0) + 1;
+                        } else if (entry.qualifiedParties) {
+                            const party = entry.qualifiedParties.find(p => p.name === c.partyName);
+                            if (party && party.position) {
+                                wingCommitteeCounts[party.position] = (wingCommitteeCounts[party.position] || 0) + 1;
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Calculate wing coalition participation
+            // Count +1 per year when a wing is part of coalition
+            const wingCoalitionCounts = {};
+            history.forEach(entry => {
+                if (entry.coalitionParties) {
+                    const wingsInCoalition = new Set();
+                    entry.coalitionParties.forEach(cp => {
+                        if (cp.position) {
+                            wingsInCoalition.add(cp.position);
+                        }
+                    });
+                    wingsInCoalition.forEach(wing => {
+                        wingCoalitionCounts[wing] = (wingCoalitionCounts[wing] || 0) + 1;
+                    });
+                }
+            });
+
+            // Render wing rankings
+            renderRanking('wingGovRuleRanking', wingGovRuleCounts, 'terms');
+            renderRanking('wingRoyalRanking', wingRoyalCounts, 'appearances');
+            renderRanking('wingOppositionRanking', wingOppositionCounts, 'terms');
+            renderRanking('wingCommitteeRanking', wingCommitteeCounts, 'chairs');
+            renderRanking('wingCoalitionRanking', wingCoalitionCounts, 'times');
         }
 
         function renderRanking(elementId, counts, unit) {

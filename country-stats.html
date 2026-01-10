@@ -257,6 +257,15 @@
             <a href="?stat=coalition" class="stat-nav-btn" data-stat="coalition">Participation</a>
         </nav>
 
+        <h3 style="text-align: center; color: #a0a0a0; margin-bottom: 15px;">Wing Statistics</h3>
+        <nav class="stat-nav">
+            <a href="?stat=wingGovRule" class="stat-nav-btn" data-stat="wingGovRule">Gov Rule</a>
+            <a href="?stat=wingRoyal" class="stat-nav-btn" data-stat="wingRoyal">Royal Court</a>
+            <a href="?stat=wingOpposition" class="stat-nav-btn" data-stat="wingOpposition">Opposition</a>
+            <a href="?stat=wingCommittee" class="stat-nav-btn" data-stat="wingCommittee">Committees</a>
+            <a href="?stat=wingCoalition" class="stat-nav-btn" data-stat="wingCoalition">Participation</a>
+        </nav>
+
         <div id="statsContainer" class="stats-container">
             <div class="no-data">
                 <div class="no-data-icon">📊</div>
@@ -298,6 +307,36 @@
                 icon: '🤝',
                 title: 'Government Participation',
                 description: 'Countries by coalition membership (ruling or supporting)',
+                unit: 'times'
+            },
+            wingGovRule: {
+                icon: '🏛️',
+                title: 'Government Rule by Wing',
+                description: 'Political wings by number of terms as Prime Minister',
+                unit: 'terms'
+            },
+            wingRoyal: {
+                icon: '👑',
+                title: 'Royal Court by Wing',
+                description: 'Political wings by King/Queen appearances',
+                unit: 'appearances'
+            },
+            wingOpposition: {
+                icon: '📢',
+                title: 'Opposition by Wing',
+                description: 'Political wings by terms as Opposition Leader',
+                unit: 'terms'
+            },
+            wingCommittee: {
+                icon: '🏛️',
+                title: 'Committees by Wing',
+                description: 'Political wings by parliamentary committee chairmanships',
+                unit: 'chairs'
+            },
+            wingCoalition: {
+                icon: '🤝',
+                title: 'Participation by Wing',
+                description: 'Political wings by coalition membership',
                 unit: 'times'
             }
         };
@@ -386,6 +425,74 @@
                             });
                             countriesInCoalition.forEach(country => {
                                 counts[country] = (counts[country] || 0) + 1;
+                            });
+                        }
+                        break;
+
+                    // Wing statistics
+                    case 'wingGovRule':
+                        if (entry.primeMinister && entry.primeMinister.position) {
+                            const wing = entry.primeMinister.position;
+                            counts[wing] = (counts[wing] || 0) + 1;
+                        }
+                        break;
+
+                    case 'wingRoyal':
+                        if (entry.king && entry.king.country) {
+                            let position = null;
+                            if (entry.qualifiedParties) {
+                                const kingParty = entry.qualifiedParties.find(p => p.name === entry.king.country);
+                                position = kingParty ? kingParty.position : null;
+                            }
+                            if (position) {
+                                counts[position] = (counts[position] || 0) + 1;
+                            }
+                        }
+                        if (entry.queen && entry.queen.country) {
+                            let position = null;
+                            if (entry.qualifiedParties) {
+                                const queenParty = entry.qualifiedParties.find(p => p.name === entry.queen.country);
+                                position = queenParty ? queenParty.position : null;
+                            }
+                            if (position) {
+                                counts[position] = (counts[position] || 0) + 1;
+                            }
+                        }
+                        break;
+
+                    case 'wingOpposition':
+                        if (entry.oppositionLeader && entry.oppositionLeader.position) {
+                            const wing = entry.oppositionLeader.position;
+                            counts[wing] = (counts[wing] || 0) + 1;
+                        }
+                        break;
+
+                    case 'wingCommittee':
+                        if (entry.committees) {
+                            entry.committees.forEach(c => {
+                                if (c.partyPosition) {
+                                    counts[c.partyPosition] = (counts[c.partyPosition] || 0) + 1;
+                                } else if (entry.qualifiedParties) {
+                                    const party = entry.qualifiedParties.find(p => p.name === c.partyName);
+                                    if (party && party.position) {
+                                        counts[party.position] = (counts[party.position] || 0) + 1;
+                                    }
+                                }
+                            });
+                        }
+                        break;
+
+                    case 'wingCoalition':
+                        // Count +1 per year when a wing is part of coalition
+                        if (entry.coalitionParties) {
+                            const wingsInCoalition = new Set();
+                            entry.coalitionParties.forEach(cp => {
+                                if (cp.position) {
+                                    wingsInCoalition.add(cp.position);
+                                }
+                            });
+                            wingsInCoalition.forEach(wing => {
+                                counts[wing] = (counts[wing] || 0) + 1;
                             });
                         }
                         break;
