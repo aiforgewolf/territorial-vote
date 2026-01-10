@@ -1767,7 +1767,7 @@
             { name: 'Hong Kong', gdp: 380, position: 'Middle' },
             { name: 'Vietnam', gdp: 370, position: 'Hard Left Wing' },
             { name: 'Pakistan', gdp: 350, position: 'Right Wing' },
-            { name: 'Czech Republic', gdp: 330, position: 'Middle' },
+            { name: 'Czech Republic', gdp: 330, position: 'Right Wing' },
             { name: 'Chile', gdp: 320, position: 'Middle' },
             { name: 'Finland', gdp: 300, position: 'Left Wing' },
             { name: 'Colombia', gdp: 300, position: 'Left Wing' },
@@ -2745,7 +2745,7 @@
 
         function getPoliticalPosition(name) {
             // This function is now used as fallback only
-            // Bonbon is always Right Wing (Czech Republic's position is Middle, but Bonbon stays Right Wing)
+            // Bonbon is always Right Wing (same as Czech Republic)
             if (name.toLowerCase() === 'bonbon') {
                 return 'Right Wing';
             }
