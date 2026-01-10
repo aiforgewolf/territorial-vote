@@ -1431,6 +1431,161 @@
             margin-top: 10px;
         }
 
+        /* History Section Styles */
+        .history-save-section {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-save-history {
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
+        }
+
+        .btn-save-history:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
+        }
+
+        .current-year {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .history-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(111, 66, 193, 0.1), rgba(155, 89, 182, 0.1));
+            border-radius: 15px;
+            border: 1px solid rgba(111, 66, 193, 0.3);
+        }
+
+        .history-section h3 {
+            color: #9b59b6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .history-content {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .history-entry {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #6f42c1;
+        }
+
+        .history-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .history-year {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .history-date {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .history-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .history-card h4 {
+            color: #e94560;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+        }
+
+        .history-card-content {
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        .history-card-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .history-card-content li {
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-party-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .history-royal {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .btn-clear-history {
+            background: rgba(220, 53, 69, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(220, 53, 69, 0.4);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 15px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            transition: all 0.3s ease;
+        }
+
+        .btn-clear-history:hover {
+            background: rgba(220, 53, 69, 0.4);
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -1699,6 +1854,21 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Save to History Section -->
+                <div class="history-save-section">
+                    <button id="saveHistoryBtn" class="btn btn-save-history" onclick="saveToHistory()">
+                        📜 Save to History
+                    </button>
+                    <span id="currentYear" class="current-year"></span>
+                </div>
+
+                <!-- History Section -->
+                <div id="historySection" class="history-section" style="display: none;">
+                    <h3>📚 Government History</h3>
+                    <div id="historyContent" class="history-content"></div>
+                    <button class="btn btn-clear-history" onclick="clearHistory()">🗑️ Clear History</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1785,8 +1955,16 @@
         // Track assigned countries to avoid duplicates
         let assignedCountries = new Set();
 
+        // History of saved government states
+        let history = [];
+        const HISTORY_STORAGE_KEY = 'electionCalculatorHistory';
+
         function saveToStorage() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries, entryId, threshold, totalCountries, parliamentSeats }));
+        }
+
+        function saveHistoryToStorage() {
+            localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
         }
 
         function loadFromStorage() {
@@ -1801,6 +1979,12 @@
                 document.getElementById('threshold').value = threshold;
                 document.getElementById('totalCountries').value = totalCountries;
                 document.getElementById('parliamentSeats').value = parliamentSeats;
+            }
+
+            // Load history
+            const historyData = localStorage.getItem(HISTORY_STORAGE_KEY);
+            if (historyData) {
+                history = JSON.parse(historyData);
             }
         }
 
@@ -1825,6 +2009,7 @@
             document.querySelector('.container').classList.add('wide');
             selectedParties.clear();
             renderParliament();
+            renderHistory();
         }
 
         function showElection() {
@@ -2469,6 +2654,257 @@
             // Update UI
             document.getElementById('voteRoyalBtn').style.display = 'none';
             document.getElementById('royalVotedStatus').style.display = 'block';
+        }
+
+        function saveToHistory() {
+            // Calculate the year: 0 + (4 * number of saves)
+            const year = history.length * 4;
+
+            // Get current state
+            const totalVotes = entries.reduce((sum, e) => sum + e.votes, 0);
+
+            // Get qualified parties
+            const qualifiedParties = currentAllocation.filter(p => {
+                const entry = entries.find(e => e.id === p.id);
+                if (!entry) return false;
+                return calculatePercentage(entry.votes, totalVotes) >= threshold;
+            });
+
+            // Get coalition parties
+            const coalitionParties = currentAllocation.filter(p => selectedParties.has(p.id));
+
+            // Get government composition (PM + Ministers)
+            const pmParty = coalitionParties.length > 0 ?
+                coalitionParties.reduce((a, b) => a.seats > b.seats ? a : b) : null;
+
+            // Calculate ministers distribution
+            let governmentMinisters = [];
+            if (coalitionParties.length > 0) {
+                const totalCoalitionSeats = coalitionParties.reduce((sum, p) => sum + p.seats, 0);
+                const ministerCount = 13;
+                let remainingMinisters = ministerCount;
+
+                coalitionParties.forEach(party => {
+                    const proportion = party.seats / totalCoalitionSeats;
+                    let ministers = Math.floor(proportion * ministerCount);
+                    if (ministers === 0 && coalitionParties.length <= ministerCount) {
+                        ministers = 1;
+                        remainingMinisters--;
+                    }
+                    governmentMinisters.push({
+                        name: party.name,
+                        realCountry: party.realCountry,
+                        color: party.color,
+                        seats: party.seats,
+                        ministers: ministers,
+                        position: party.position
+                    });
+                });
+            }
+
+            // Get opposition leader
+            const nonCoalitionParties = qualifiedParties.filter(p => !selectedParties.has(p.id));
+            const oppositionLeader = nonCoalitionParties.length > 0 ?
+                nonCoalitionParties.reduce((a, b) => a.seats > b.seats ? a : b) : null;
+
+            // Create history entry
+            const historyEntry = {
+                year: year,
+                savedAt: new Date().toISOString(),
+                threshold: threshold,
+                parliamentSeats: parliamentSeats,
+                totalVotes: totalVotes,
+
+                // All qualified parties
+                qualifiedParties: qualifiedParties.map(p => ({
+                    name: p.name,
+                    realCountry: p.realCountry,
+                    color: p.color,
+                    seats: p.seats,
+                    votes: p.votes,
+                    position: p.position
+                })),
+
+                // Coalition/Government
+                coalitionParties: coalitionParties.map(p => ({
+                    name: p.name,
+                    realCountry: p.realCountry,
+                    color: p.color,
+                    seats: p.seats,
+                    position: p.position
+                })),
+                coalitionSeats: coalitionParties.reduce((sum, p) => sum + p.seats, 0),
+                hasMajority: coalitionParties.reduce((sum, p) => sum + p.seats, 0) > parliamentSeats / 2,
+
+                // Prime Minister
+                primeMinister: pmParty ? {
+                    name: pmParty.name,
+                    realCountry: pmParty.realCountry,
+                    color: pmParty.color,
+                    position: pmParty.position
+                } : null,
+
+                // Government ministers
+                governmentMinisters: governmentMinisters,
+
+                // Opposition Leader
+                oppositionLeader: oppositionLeader ? {
+                    name: oppositionLeader.name,
+                    realCountry: oppositionLeader.realCountry,
+                    color: oppositionLeader.color,
+                    position: oppositionLeader.position
+                } : null,
+
+                // Royal Court
+                king: royalsVoted && savedKing ? { ...savedKing } : null,
+                queen: royalsVoted && savedQueen ? { ...savedQueen } : null
+            };
+
+            history.push(historyEntry);
+            saveHistoryToStorage();
+            renderHistory();
+
+            // Update current year display
+            document.getElementById('currentYear').textContent = `Next: Year ${(history.length) * 4}`;
+
+            alert(`Saved to history as Year ${year}!`);
+        }
+
+        function renderHistory() {
+            const historySection = document.getElementById('historySection');
+            const historyContent = document.getElementById('historyContent');
+            const currentYearSpan = document.getElementById('currentYear');
+
+            // Update current year display
+            currentYearSpan.textContent = history.length > 0 ? `Next: Year ${history.length * 4}` : 'Year 0';
+
+            if (history.length === 0) {
+                historySection.style.display = 'none';
+                return;
+            }
+
+            historySection.style.display = 'block';
+
+            // Render history entries in reverse chronological order
+            let html = '';
+            [...history].reverse().forEach(entry => {
+                const savedDate = new Date(entry.savedAt).toLocaleDateString();
+
+                html += `
+                    <div class="history-entry">
+                        <div class="history-entry-header">
+                            <span class="history-year">📅 Year ${entry.year}</span>
+                            <span class="history-date">Saved: ${savedDate}</span>
+                        </div>
+                        <div class="history-grid">
+                            <!-- Government -->
+                            <div class="history-card">
+                                <h4>🏛️ Government</h4>
+                                <div class="history-card-content">
+                                    ${entry.primeMinister ? `
+                                        <div><strong>Prime Minister:</strong></div>
+                                        <div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
+                                            <span class="history-party-dot" style="background: ${entry.primeMinister.color}"></span>
+                                            ${entry.primeMinister.name}
+                                            <span style="color: #ffd700; font-size: 0.8rem;">🌍 ${entry.primeMinister.realCountry || ''}</span>
+                                        </div>
+                                    ` : '<div>No government formed</div>'}
+                                    <div style="margin-top: 8px;">
+                                        <strong>Coalition:</strong> ${entry.coalitionSeats} seats
+                                        ${entry.hasMajority ? '<span style="color: #4ade80;"> (Majority)</span>' : '<span style="color: #f87171;"> (Minority)</span>'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Coalition Parties -->
+                            <div class="history-card">
+                                <h4>🤝 Coalition Parties (${entry.coalitionParties.length})</h4>
+                                <div class="history-card-content">
+                                    <ul>
+                                        ${entry.coalitionParties.map(p => `
+                                            <li>
+                                                <span class="history-party-dot" style="background: ${p.color}"></span>
+                                                ${p.name} (${p.seats})
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Royal Court -->
+                            <div class="history-card">
+                                <h4>👑 Royal Court</h4>
+                                <div class="history-card-content">
+                                    ${entry.king ? `
+                                        <div class="history-royal">
+                                            🤴 <strong>${entry.king.name}</strong>
+                                            <span style="color: #a0a0a0;">from ${entry.king.country}</span>
+                                        </div>
+                                    ` : '<div>No King elected</div>'}
+                                    ${entry.queen ? `
+                                        <div class="history-royal">
+                                            👸 <strong>${entry.queen.name}</strong>
+                                            <span style="color: #a0a0a0;">from ${entry.queen.country}</span>
+                                        </div>
+                                    ` : '<div>No Queen elected</div>'}
+                                </div>
+                            </div>
+
+                            <!-- Opposition -->
+                            <div class="history-card">
+                                <h4>📢 Opposition</h4>
+                                <div class="history-card-content">
+                                    ${entry.oppositionLeader ? `
+                                        <div><strong>Opposition Leader:</strong></div>
+                                        <div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
+                                            <span class="history-party-dot" style="background: ${entry.oppositionLeader.color}"></span>
+                                            ${entry.oppositionLeader.name}
+                                            <span style="color: #ffd700; font-size: 0.8rem;">🌍 ${entry.oppositionLeader.realCountry || ''}</span>
+                                        </div>
+                                    ` : '<div>No opposition</div>'}
+                                </div>
+                            </div>
+
+                            <!-- Parliament Stats -->
+                            <div class="history-card">
+                                <h4>📊 Parliament Stats</h4>
+                                <div class="history-card-content">
+                                    <div>Total Seats: ${entry.parliamentSeats}</div>
+                                    <div>Threshold: ${entry.threshold}%</div>
+                                    <div>Qualified Parties: ${entry.qualifiedParties.length}</div>
+                                    <div>Total Votes: ${entry.totalVotes.toLocaleString()}</div>
+                                </div>
+                            </div>
+
+                            <!-- Ministers -->
+                            <div class="history-card">
+                                <h4>👔 Government Ministers</h4>
+                                <div class="history-card-content">
+                                    <ul>
+                                        ${entry.governmentMinisters.map(m => `
+                                            <li>
+                                                <span class="history-party-dot" style="background: ${m.color}"></span>
+                                                ${m.name}: ${m.ministers} minister${m.ministers !== 1 ? 's' : ''}
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            historyContent.innerHTML = html;
+        }
+
+        function clearHistory() {
+            if (history.length === 0) return;
+            if (confirm('Are you sure you want to clear all history? This cannot be undone.')) {
+                history = [];
+                saveHistoryToStorage();
+                renderHistory();
+            }
         }
 
         function updatePartyCards() {
