@@ -619,21 +619,27 @@
             });
 
             // Calculate royal court presence (King + Queen countries)
-            // Look up real country from qualified parties
+            // Use saved realCountry, or look up from qualified parties for older entries
             const royalCounts = {};
             history.forEach(entry => {
-                if (entry.king && entry.king.country && entry.qualifiedParties) {
-                    // Find the real country for the king's party
-                    const kingParty = entry.qualifiedParties.find(p => p.name === entry.king.country);
-                    const realCountry = kingParty ? kingParty.realCountry : entry.king.country;
+                if (entry.king && entry.king.country) {
+                    // Use saved realCountry if available, otherwise look up from qualified parties
+                    let realCountry = entry.king.realCountry;
+                    if (!realCountry && entry.qualifiedParties) {
+                        const kingParty = entry.qualifiedParties.find(p => p.name === entry.king.country);
+                        realCountry = kingParty ? kingParty.realCountry : null;
+                    }
                     if (realCountry) {
                         royalCounts[realCountry] = (royalCounts[realCountry] || 0) + 1;
                     }
                 }
-                if (entry.queen && entry.queen.country && entry.qualifiedParties) {
-                    // Find the real country for the queen's party
-                    const queenParty = entry.qualifiedParties.find(p => p.name === entry.queen.country);
-                    const realCountry = queenParty ? queenParty.realCountry : entry.queen.country;
+                if (entry.queen && entry.queen.country) {
+                    // Use saved realCountry if available, otherwise look up from qualified parties
+                    let realCountry = entry.queen.realCountry;
+                    if (!realCountry && entry.qualifiedParties) {
+                        const queenParty = entry.qualifiedParties.find(p => p.name === entry.queen.country);
+                        realCountry = queenParty ? queenParty.realCountry : null;
+                    }
                     if (realCountry) {
                         royalCounts[realCountry] = (royalCounts[realCountry] || 0) + 1;
                     }

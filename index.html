@@ -3273,9 +3273,13 @@
                 const queenName = document.getElementById('queenName').textContent;
 
                 if (kingName && kingName !== '-') {
+                    const kingCountryName = document.getElementById('kingCountry').textContent;
+                    // Look up real country from entries (includes unqualified parties)
+                    const kingEntry = entries.find(e => e.name === kingCountryName);
                     historyEntry.king = {
                         name: kingName,
-                        country: document.getElementById('kingCountry').textContent,
+                        country: kingCountryName,
+                        realCountry: kingEntry ? kingEntry.realCountry : null,
                         color: document.getElementById('kingCountryDot').style.background,
                         position: document.getElementById('kingPosition').textContent,
                         isQualified: document.getElementById('kingQualified').classList.contains('qualified'),
@@ -3284,9 +3288,13 @@
                 }
 
                 if (queenName && queenName !== '-') {
+                    const queenCountryName = document.getElementById('queenCountry').textContent;
+                    // Look up real country from entries (includes unqualified parties)
+                    const queenEntry = entries.find(e => e.name === queenCountryName);
                     historyEntry.queen = {
                         name: queenName,
-                        country: document.getElementById('queenCountry').textContent,
+                        country: queenCountryName,
+                        realCountry: queenEntry ? queenEntry.realCountry : null,
                         color: document.getElementById('queenCountryDot').style.background,
                         position: document.getElementById('queenPosition').textContent,
                         isQualified: document.getElementById('queenQualified').classList.contains('qualified'),
