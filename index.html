@@ -1254,6 +1254,97 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        /* Royal Section Styles */
+        .royal-section {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(218, 165, 32, 0.05));
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .royal-section h3 {
+            color: #ffd700;
+            font-size: 1.4rem;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .royal-couple {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .royal-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            min-width: 250px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .royal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ffd700, #ffec8b, #ffd700);
+        }
+
+        .royal-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .royal-title {
+            color: #ffd700;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .royal-name {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .royal-country {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .royal-country-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .royal-country-name {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .royal-chance {
+            color: #ffd700;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -1478,6 +1569,32 @@
                     <div id="committeesGrid" class="committees-grid"></div>
                     <div id="committeesSummary" class="committees-summary"></div>
                 </div>
+
+                <div id="royalSection" class="royal-section" style="display: none;">
+                    <h3>👑 The Royal Court</h3>
+                    <div class="royal-couple">
+                        <div class="royal-card" id="kingCard">
+                            <div class="royal-icon">🤴</div>
+                            <div class="royal-title">King</div>
+                            <div class="royal-name" id="kingName">-</div>
+                            <div class="royal-country">
+                                <span class="royal-country-dot" id="kingCountryDot"></span>
+                                <span class="royal-country-name" id="kingCountry">-</span>
+                            </div>
+                            <div class="royal-chance" id="kingChance">-</div>
+                        </div>
+                        <div class="royal-card" id="queenCard">
+                            <div class="royal-icon">👸</div>
+                            <div class="royal-title">Queen</div>
+                            <div class="royal-name" id="queenName">-</div>
+                            <div class="royal-country">
+                                <span class="royal-country-dot" id="queenCountryDot"></span>
+                                <span class="royal-country-name" id="queenCountry">-</span>
+                            </div>
+                            <div class="royal-chance" id="queenChance">-</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1685,6 +1802,7 @@
             // Only show if at least one party is selected
             if (coalitionParties.length === 0) {
                 governmentSection.classList.remove('active');
+                document.getElementById('royalSection').style.display = 'none';
                 return;
             }
 
@@ -1835,6 +1953,9 @@
             `;
 
             governmentSummary.innerHTML = summaryHTML;
+
+            // Render the Royal Court after government is established
+            renderRoyalCourt(coalitionParties);
         }
 
         // Parliamentary committees with icons
@@ -1957,6 +2078,130 @@
             `;
 
             committeesSummary.innerHTML = summaryHTML;
+        }
+
+        // Royal names for King and Queen
+        const royalMaleNames = [
+            'Alexander', 'William', 'Henry', 'Charles', 'Edward', 'George', 'Frederick',
+            'Leopold', 'Albert', 'Louis', 'Philip', 'Arthur', 'Richard', 'James',
+            'Ferdinand', 'Maximilian', 'Otto', 'Franz', 'Gustav', 'Oscar',
+            'Christian', 'Harald', 'Carl', 'Magnus', 'Erik', 'Olaf', 'Sigmund',
+            'Constantine', 'Nicholas', 'Dmitri', 'Vladimir', 'Alexei', 'Boris',
+            'Sebastian', 'Theodore', 'Marcus', 'Julius', 'Augustus', 'Casimir'
+        ];
+
+        const royalFemaleNames = [
+            'Victoria', 'Elizabeth', 'Catherine', 'Maria', 'Anne', 'Charlotte', 'Eleanor',
+            'Isabella', 'Sophia', 'Margaret', 'Alexandra', 'Beatrice', 'Helena', 'Louise',
+            'Josephine', 'Eugenia', 'Mathilde', 'Astrid', 'Ingrid', 'Silvia',
+            'Christina', 'Margarethe', 'Juliana', 'Wilhelmina', 'Maxima', 'Letizia',
+            'Anastasia', 'Tatiana', 'Olga', 'Natalia', 'Ekaterina', 'Elena',
+            'Frederica', 'Caroline', 'Amelia', 'Cordelia', 'Aurelia', 'Seraphina'
+        ];
+
+        const royalTitles = [
+            'the Great', 'the Wise', 'the Just', 'the Magnificent', 'the Noble',
+            'the Brave', 'the Fair', 'the Peaceful', 'the Gracious', 'the Beloved'
+        ];
+
+        function getRandomRoyalName(isMale) {
+            const names = isMale ? royalMaleNames : royalFemaleNames;
+            const name = names[Math.floor(Math.random() * names.length)];
+            const romanNumeral = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][Math.floor(Math.random() * 7)];
+
+            // 30% chance to add a title
+            if (Math.random() < 0.3) {
+                const title = royalTitles[Math.floor(Math.random() * royalTitles.length)];
+                return `${name} ${romanNumeral} ${title}`;
+            }
+            return `${name} ${romanNumeral}`;
+        }
+
+        function selectRoyalByVotePercentage(parties, totalVotes, excludePartyId = null) {
+            // Filter out excluded party if specified
+            const eligibleParties = excludePartyId
+                ? parties.filter(p => p.id !== excludePartyId)
+                : parties;
+
+            if (eligibleParties.length === 0) return null;
+
+            // Calculate cumulative percentages for weighted random selection
+            const random = Math.random() * 100;
+            let cumulative = 0;
+
+            for (const party of eligibleParties) {
+                const percentage = (party.votes / totalVotes) * 100;
+                cumulative += percentage;
+                if (random <= cumulative) {
+                    return {
+                        party: party,
+                        percentage: percentage
+                    };
+                }
+            }
+
+            // Fallback to last party
+            const lastParty = eligibleParties[eligibleParties.length - 1];
+            return {
+                party: lastParty,
+                percentage: (lastParty.votes / totalVotes) * 100
+            };
+        }
+
+        function renderRoyalCourt(coalitionParties) {
+            const royalSection = document.getElementById('royalSection');
+
+            // Only show if there's at least one party in coalition
+            if (coalitionParties.length === 0) {
+                royalSection.style.display = 'none';
+                return;
+            }
+
+            // Use all entries (not just coalition) for royal selection
+            const totalVotes = entries.reduce((sum, e) => sum + e.votes, 0);
+
+            if (entries.length < 2 || totalVotes === 0) {
+                royalSection.style.display = 'none';
+                return;
+            }
+
+            // Get parties with colors from currentAllocation
+            const partiesWithColors = entries.map(entry => {
+                const allocated = currentAllocation.find(a => a.id === entry.id);
+                return {
+                    ...entry,
+                    color: allocated ? allocated.color : '#888'
+                };
+            });
+
+            // Select King based on vote percentage
+            const kingSelection = selectRoyalByVotePercentage(partiesWithColors, totalVotes);
+
+            // Select Queen from a different country
+            const queenSelection = selectRoyalByVotePercentage(partiesWithColors, totalVotes, kingSelection.party.id);
+
+            if (!kingSelection || !queenSelection) {
+                royalSection.style.display = 'none';
+                return;
+            }
+
+            // Generate random names
+            const kingName = getRandomRoyalName(true);
+            const queenName = getRandomRoyalName(false);
+
+            // Update King display
+            document.getElementById('kingName').textContent = kingName;
+            document.getElementById('kingCountry').textContent = kingSelection.party.name;
+            document.getElementById('kingCountryDot').style.background = kingSelection.party.color;
+            document.getElementById('kingChance').textContent = `${kingSelection.percentage.toFixed(1)}% chance`;
+
+            // Update Queen display
+            document.getElementById('queenName').textContent = queenName;
+            document.getElementById('queenCountry').textContent = queenSelection.party.name;
+            document.getElementById('queenCountryDot').style.background = queenSelection.party.color;
+            document.getElementById('queenChance').textContent = `${queenSelection.percentage.toFixed(1)}% chance`;
+
+            royalSection.style.display = 'block';
         }
 
         function updatePartyCards() {
