@@ -225,6 +225,95 @@
             transform: translateY(-2px);
         }
 
+        .country-stats-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .country-stats-section h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .country-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .country-stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .country-stat-card h3 {
+            color: #e94560;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .country-ranking {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .country-ranking li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .country-ranking li:last-child {
+            border-bottom: none;
+        }
+
+        .rank-position {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .rank-position.gold { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; }
+        .rank-position.silver { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #000; }
+        .rank-position.bronze { background: linear-gradient(135deg, #cd7f32, #b87333); color: #000; }
+
+        .country-name {
+            flex: 1;
+            color: #fff;
+        }
+
+        .country-count {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .no-data {
+            color: #a0a0a0;
+            font-style: italic;
+            text-align: center;
+            padding: 10px;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -278,6 +367,28 @@
             <div class="stat-item">
                 <div class="stat-value" id="totalPMs">0</div>
                 <div class="stat-label">Prime Ministers</div>
+            </div>
+        </div>
+
+        <div id="countryStatsSection" class="country-stats-section" style="display: none;">
+            <h2>🌍 Country Statistics</h2>
+            <div class="country-stats-grid">
+                <div class="country-stat-card">
+                    <h3>🏛️ Government Rule</h3>
+                    <ul id="govRuleRanking" class="country-ranking"></ul>
+                </div>
+                <div class="country-stat-card">
+                    <h3>👑 Royal Court Presence</h3>
+                    <ul id="royalRanking" class="country-ranking"></ul>
+                </div>
+                <div class="country-stat-card">
+                    <h3>📢 Opposition Leadership</h3>
+                    <ul id="oppositionRanking" class="country-ranking"></ul>
+                </div>
+                <div class="country-stat-card">
+                    <h3>🏛️ Committee Chairs</h3>
+                    <ul id="committeeRanking" class="country-ranking"></ul>
+                </div>
             </div>
         </div>
 
@@ -483,6 +594,101 @@
             });
 
             historyContent.innerHTML = html;
+
+            // Render country statistics
+            renderCountryStats();
+        }
+
+        function renderCountryStats() {
+            const countryStatsSection = document.getElementById('countryStatsSection');
+
+            if (history.length === 0) {
+                countryStatsSection.style.display = 'none';
+                return;
+            }
+
+            countryStatsSection.style.display = 'block';
+
+            // Calculate government rule (PM's country)
+            const govRuleCounts = {};
+            history.forEach(entry => {
+                if (entry.primeMinister && entry.primeMinister.realCountry) {
+                    const country = entry.primeMinister.realCountry;
+                    govRuleCounts[country] = (govRuleCounts[country] || 0) + 1;
+                }
+            });
+
+            // Calculate royal court presence (King + Queen countries)
+            const royalCounts = {};
+            history.forEach(entry => {
+                if (entry.king && entry.king.country) {
+                    // King's country is stored as the party country name
+                    royalCounts[entry.king.country] = (royalCounts[entry.king.country] || 0) + 1;
+                }
+                if (entry.queen && entry.queen.country) {
+                    royalCounts[entry.queen.country] = (royalCounts[entry.queen.country] || 0) + 1;
+                }
+            });
+
+            // Calculate opposition leadership
+            const oppositionCounts = {};
+            history.forEach(entry => {
+                if (entry.oppositionLeader && entry.oppositionLeader.realCountry) {
+                    const country = entry.oppositionLeader.realCountry;
+                    oppositionCounts[country] = (oppositionCounts[country] || 0) + 1;
+                }
+            });
+
+            // Calculate committee chairs
+            const committeeCounts = {};
+            history.forEach(entry => {
+                if (entry.committees) {
+                    entry.committees.forEach(c => {
+                        // We need to find the real country for this party
+                        // Check qualified parties for the match
+                        if (entry.qualifiedParties) {
+                            const party = entry.qualifiedParties.find(p => p.name === c.partyName);
+                            if (party && party.realCountry) {
+                                committeeCounts[party.realCountry] = (committeeCounts[party.realCountry] || 0) + 1;
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Render rankings
+            renderRanking('govRuleRanking', govRuleCounts, 'terms');
+            renderRanking('royalRanking', royalCounts, 'appearances');
+            renderRanking('oppositionRanking', oppositionCounts, 'terms');
+            renderRanking('committeeRanking', committeeCounts, 'chairs');
+        }
+
+        function renderRanking(elementId, counts, unit) {
+            const element = document.getElementById(elementId);
+            const sorted = Object.entries(counts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5); // Top 5
+
+            if (sorted.length === 0) {
+                element.innerHTML = '<li class="no-data">No data yet</li>';
+                return;
+            }
+
+            element.innerHTML = sorted.map((entry, index) => {
+                const [country, count] = entry;
+                let rankClass = '';
+                if (index === 0) rankClass = 'gold';
+                else if (index === 1) rankClass = 'silver';
+                else if (index === 2) rankClass = 'bronze';
+
+                return `
+                    <li>
+                        <span class="rank-position ${rankClass}">${index + 1}</span>
+                        <span class="country-name">${country}</span>
+                        <span class="country-count">${count}</span>
+                    </li>
+                `;
+            }).join('');
         }
 
         function clearHistory() {
