@@ -188,6 +188,26 @@
             background: rgba(220, 53, 69, 0.4);
         }
 
+        .btn-view-detail {
+            background: rgba(111, 66, 193, 0.3);
+            color: #b794f6;
+            border: 1px solid rgba(111, 66, 193, 0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-view-detail:hover {
+            background: rgba(111, 66, 193, 0.5);
+            transform: translateY(-2px);
+            color: #fff;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -295,13 +315,15 @@
 
             // Render history entries in reverse chronological order
             let html = '';
-            [...history].reverse().forEach(entry => {
+            [...history].reverse().forEach((entry, reverseIndex) => {
+                const originalIndex = history.length - 1 - reverseIndex;
                 const savedDate = new Date(entry.savedAt).toLocaleDateString();
 
                 html += `
                     <div class="history-entry">
                         <div class="history-entry-header">
                             <span class="history-year">Year ${entry.year}</span>
+                            <a href="index.html?historyIndex=${originalIndex}" class="btn-view-detail">View Detail</a>
                             <span class="history-date">Saved: ${savedDate}</span>
                         </div>
                         <div class="history-grid">

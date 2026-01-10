@@ -1482,6 +1482,76 @@
             transform: translateY(-2px);
         }
 
+        /* Read-only mode styles */
+        .read-only-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .read-only-banner .banner-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .read-only-banner .banner-year {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .btn-back-history {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-back-history:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        body.read-only-mode {
+            padding-top: 70px;
+        }
+
+        body.read-only-mode .input-section,
+        body.read-only-mode .history-save-section,
+        body.read-only-mode .royal-vote-btn,
+        body.read-only-mode .btn-to-parliament,
+        body.read-only-mode .btn-remove,
+        body.read-only-mode .btn-add,
+        body.read-only-mode .btn-clear,
+        body.read-only-mode #exportCsvBtn,
+        body.read-only-mode .scan-section {
+            display: none !important;
+        }
+
+        body.read-only-mode .party-card {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        body.read-only-mode .coalition-builder {
+            opacity: 0.8;
+        }
+
         .current-year {
             font-size: 1.2rem;
             font-weight: bold;
@@ -1632,6 +1702,12 @@
     </style>
 </head>
 <body>
+    <!-- Read-only mode banner (hidden by default) -->
+    <div id="readOnlyBanner" class="read-only-banner" style="display: none;">
+        <span class="banner-text">📜 Viewing <span id="bannerYear" class="banner-year">Year 0</span> (Read-only)</span>
+        <a href="history.html" class="btn-back-history">← Back to History</a>
+    </div>
+
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1 style="margin: 0;">Election Calculator</h1>
@@ -1974,6 +2050,10 @@
         let history = [];
         const HISTORY_STORAGE_KEY = 'electionCalculatorHistory';
 
+        // Read-only mode for viewing history
+        let readOnlyMode = false;
+        let viewingHistoryEntry = null;
+
         function saveToStorage() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 entries,
@@ -2021,6 +2101,279 @@
                     assignedCountries.add(entry.realCountry);
                 }
             });
+        }
+
+        // Check if we're viewing a history entry (read-only mode)
+        function checkForHistoryView() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const historyIndex = urlParams.get('historyIndex');
+
+            if (historyIndex !== null) {
+                const index = parseInt(historyIndex);
+
+                // Load history from storage
+                const historyData = localStorage.getItem(HISTORY_STORAGE_KEY);
+                if (historyData) {
+                    history = JSON.parse(historyData);
+                }
+
+                if (history[index]) {
+                    readOnlyMode = true;
+                    viewingHistoryEntry = history[index];
+                    loadHistoryEntryView(viewingHistoryEntry);
+                }
+            }
+        }
+
+        // Load a history entry and display it in read-only mode
+        function loadHistoryEntryView(entry) {
+            // Enable read-only mode UI
+            document.body.classList.add('read-only-mode');
+            document.getElementById('readOnlyBanner').style.display = 'flex';
+            document.getElementById('bannerYear').textContent = `Year ${entry.year}`;
+
+            // Set parliament settings from history
+            parliamentSeats = entry.parliamentSeats || 200;
+            threshold = entry.threshold || 5;
+
+            // Recreate entries from qualified parties data for display
+            entries = [];
+            entryId = 0;
+            if (entry.qualifiedParties) {
+                entry.qualifiedParties.forEach(p => {
+                    entries.push({
+                        id: entryId++,
+                        name: p.name,
+                        votes: p.votes || 0,
+                        color: p.color,
+                        realCountry: p.realCountry,
+                        position: p.position
+                    });
+                });
+            }
+
+            // Set up the allocation from qualified parties
+            currentAllocation = (entry.qualifiedParties || []).map((p, idx) => ({
+                id: idx,
+                name: p.name,
+                votes: p.votes || 0,
+                seats: p.seats,
+                color: p.color,
+                realCountry: p.realCountry,
+                position: p.position
+            }));
+
+            // Pre-select coalition parties
+            selectedParties.clear();
+            if (entry.coalitionParties) {
+                entry.coalitionParties.forEach(cp => {
+                    const match = currentAllocation.find(p => p.name === cp.name);
+                    if (match) {
+                        selectedParties.add(match.id);
+                    }
+                });
+            }
+
+            // Show parliament screen directly
+            document.getElementById('electionScreen').classList.add('hidden');
+            document.getElementById('parliamentScreen').classList.add('active');
+            document.querySelector('.container').classList.add('wide');
+
+            // Render parliament with the historical data
+            renderParliamentFromHistory(entry);
+
+            // Load Royal Court if saved
+            if (entry.king || entry.queen) {
+                loadRoyalCourtFromHistory(entry);
+            }
+        }
+
+        // Render parliament view from history entry data
+        function renderParliamentFromHistory(entry) {
+            const partyCardsContainer = document.getElementById('partyCards');
+            const hemicycleSeats = document.getElementById('hemicycleSeats');
+
+            // Generate party cards
+            let cardsHtml = '';
+            currentAllocation.forEach(party => {
+                const isSelected = selectedParties.has(party.id);
+                const positionClass = getPositionClass(party.position || 'Middle');
+                cardsHtml += `
+                    <div class="party-card ${isSelected ? 'selected' : ''}" data-party-id="${party.id}">
+                        <div class="party-color" style="background: ${party.color};"></div>
+                        <div class="party-info">
+                            <div class="party-name">${escapeHTML(party.name)}</div>
+                            <div class="real-country-tag">${party.realCountry || ''}</div>
+                            <div class="party-seats">${party.seats} seats</div>
+                            <span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span>
+                        </div>
+                        ${isSelected ? '<div class="selected-check">✓</div>' : ''}
+                    </div>
+                `;
+            });
+            partyCardsContainer.innerHTML = cardsHtml;
+
+            // Generate hemicycle seats
+            const totalSeats = entry.parliamentSeats || 200;
+            let seatsHtml = '';
+            let seatIndex = 0;
+
+            currentAllocation.forEach(party => {
+                for (let i = 0; i < party.seats; i++) {
+                    const angle = 180 + (seatIndex / totalSeats) * 180;
+                    const row = Math.floor(seatIndex / 20);
+                    const radius = 150 + row * 25;
+                    seatsHtml += `<div class="seat" style="background: ${party.color};" title="${escapeHTML(party.name)}"></div>`;
+                    seatIndex++;
+                }
+            });
+            hemicycleSeats.innerHTML = seatsHtml;
+
+            // Update coalition display
+            updateCoalition();
+
+            // Render government composition if coalition exists
+            if (entry.coalitionParties && entry.coalitionParties.length > 0) {
+                renderGovernmentFromHistory(entry);
+            }
+
+            // Render parliamentary committees
+            if (entry.committees) {
+                renderCommitteesFromHistory(entry);
+            }
+        }
+
+        // Render government composition from history
+        function renderGovernmentFromHistory(entry) {
+            const govComposition = document.getElementById('governmentComposition');
+            if (!govComposition) return;
+
+            govComposition.style.display = 'block';
+
+            let html = `<h3>Government Composition</h3>`;
+
+            // Prime Minister
+            if (entry.primeMinister) {
+                const positionClass = getPositionClass(entry.primeMinister.position || 'Middle');
+                html += `
+                    <div class="pm-section">
+                        <div class="pm-title">Prime Minister</div>
+                        <div class="pm-card">
+                            <div class="pm-color" style="background: ${entry.primeMinister.color};"></div>
+                            <div class="pm-info">
+                                <div class="pm-name">${escapeHTML(entry.primeMinister.name)}</div>
+                                <div class="pm-country">${entry.primeMinister.realCountry || ''}</div>
+                                <span class="position-badge ${positionClass}">${entry.primeMinister.position || ''}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Ministers
+            if (entry.governmentMinisters && entry.governmentMinisters.length > 0) {
+                html += `<div class="ministers-section"><div class="ministers-title">Government Ministers (13)</div><div class="ministers-grid">`;
+                entry.governmentMinisters.forEach(m => {
+                    const positionClass = getPositionClass(m.position || 'Middle');
+                    html += `
+                        <div class="minister-card">
+                            <div class="minister-color" style="background: ${m.color};"></div>
+                            <div class="minister-info">
+                                <div class="minister-name">${escapeHTML(m.name)}</div>
+                                <div class="minister-count">${m.ministers} minister${m.ministers !== 1 ? 's' : ''}</div>
+                                <span class="position-badge ${positionClass}" style="font-size: 0.65rem;">${m.position || ''}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div></div>`;
+            }
+
+            // Opposition Leader
+            if (entry.oppositionLeader) {
+                const positionClass = getPositionClass(entry.oppositionLeader.position || 'Middle');
+                html += `
+                    <div class="opposition-section">
+                        <div class="opposition-title">Opposition Leader</div>
+                        <div class="opposition-card">
+                            <div class="opposition-color" style="background: ${entry.oppositionLeader.color};"></div>
+                            <div class="opposition-info">
+                                <div class="opposition-name">${escapeHTML(entry.oppositionLeader.name)}</div>
+                                <div class="opposition-country">${entry.oppositionLeader.realCountry || ''}</div>
+                                <span class="position-badge ${positionClass}">${entry.oppositionLeader.position || ''}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            govComposition.innerHTML = html;
+        }
+
+        // Render committees from history
+        function renderCommitteesFromHistory(entry) {
+            const committeesContainer = document.getElementById('committeesContainer');
+            if (!committeesContainer || !entry.committees) return;
+
+            committeesContainer.style.display = 'block';
+
+            let html = `<h3>Parliamentary Committees</h3><div class="committees-grid">`;
+
+            entry.committees.forEach(c => {
+                html += `
+                    <div class="committee-card">
+                        <span class="committee-icon">${c.committeeIcon}</span>
+                        <span class="committee-name">${c.committeeName}</span>
+                        <span class="committee-party-dot" style="background: ${c.partyColor};"></span>
+                        <span class="committee-party-name">${c.partyName}</span>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            committeesContainer.innerHTML = html;
+        }
+
+        // Load Royal Court from history
+        function loadRoyalCourtFromHistory(entry) {
+            const royalSection = document.getElementById('royalSection');
+            if (!royalSection) return;
+
+            royalSection.style.display = 'block';
+
+            // King
+            if (entry.king) {
+                document.getElementById('kingName').textContent = entry.king.name;
+                document.getElementById('kingCountry').textContent = entry.king.country;
+                document.getElementById('kingCountryDot').style.background = entry.king.color;
+                document.getElementById('kingPosition').textContent = entry.king.position || '';
+                const kingQualified = document.getElementById('kingQualified');
+                kingQualified.textContent = entry.king.isQualified ? '✓ Qualified' : '✗ Not Qualified';
+                kingQualified.className = entry.king.isQualified ? 'royal-status qualified' : 'royal-status not-qualified';
+                const kingGov = document.getElementById('kingGovernment');
+                kingGov.textContent = entry.king.inGovernment ? '🏛️ In Government' : '📢 Opposition';
+                kingGov.className = entry.king.inGovernment ? 'royal-status in-government' : 'royal-status in-opposition';
+            } else {
+                document.getElementById('kingName').textContent = '-';
+                document.getElementById('kingCountry').textContent = '-';
+            }
+
+            // Queen
+            if (entry.queen) {
+                document.getElementById('queenName').textContent = entry.queen.name;
+                document.getElementById('queenCountry').textContent = entry.queen.country;
+                document.getElementById('queenCountryDot').style.background = entry.queen.color;
+                document.getElementById('queenPosition').textContent = entry.queen.position || '';
+                const queenQualified = document.getElementById('queenQualified');
+                queenQualified.textContent = entry.queen.isQualified ? '✓ Qualified' : '✗ Not Qualified';
+                queenQualified.className = entry.queen.isQualified ? 'royal-status qualified' : 'royal-status not-qualified';
+                const queenGov = document.getElementById('queenGovernment');
+                queenGov.textContent = entry.queen.inGovernment ? '🏛️ In Government' : '📢 Opposition';
+                queenGov.className = entry.queen.inGovernment ? 'royal-status in-government' : 'royal-status in-opposition';
+            } else {
+                document.getElementById('queenName').textContent = '-';
+                document.getElementById('queenCountry').textContent = '-';
+            }
         }
 
         function updateThreshold() {
@@ -3471,6 +3824,9 @@
         // Initialize: load saved data and render
         loadFromStorage();
         renderResults();
+
+        // Check if viewing a history entry (read-only mode)
+        checkForHistoryView();
 
         // ============ IMAGE SCANNING FUNCTIONS ============
         let scannedEntries = [];
