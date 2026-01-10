@@ -2273,38 +2273,49 @@
 
             governmentSection.style.display = 'block';
 
-            let html = '';
+            const ministerTitles = [
+                'Finance', 'Foreign Affairs', 'Interior', 'Defense',
+                'Justice', 'Health', 'Education', 'Economy',
+                'Labor', 'Environment', 'Transport', 'Agriculture', 'Culture'
+            ];
 
-            // Prime Minister
+            let html = '';
+            let ministerIndex = 0;
+
+            // Prime Minister first
             if (entry.primeMinister) {
                 const positionClass = getPositionClass(entry.primeMinister.position || 'Middle');
                 html += `
-                    <div class="government-role pm-role">
-                        <div class="role-title">👑 Prime Minister</div>
-                        <div class="role-party">
-                            <span class="party-dot" style="background: ${entry.primeMinister.color};"></span>
-                            <span class="party-name">${escapeHTML(entry.primeMinister.name)}</span>
-                            <span class="real-country">${entry.primeMinister.realCountry || ''}</span>
-                            <span class="position-badge ${positionClass}">${entry.primeMinister.position || ''}</span>
-                        </div>
+                    <div class="minister-card prime-minister">
+                        <div class="minister-icon" style="background: ${entry.primeMinister.color};">👑</div>
+                        <div class="minister-title">Prime Minister</div>
+                        <div class="minister-party">${escapeHTML(entry.primeMinister.name)}</div>
+                        <span class="position-badge ${positionClass}" style="font-size: 0.65rem; margin-top: 5px;">${entry.primeMinister.position || 'Unknown'}</span>
                     </div>
                 `;
             }
 
-            // Ministers
+            // Ministers - distribute based on saved minister counts
             if (entry.governmentMinisters && entry.governmentMinisters.length > 0) {
-                entry.governmentMinisters.forEach(m => {
+                // Sort by seats (same as original allocation)
+                const sortedMinisters = [...entry.governmentMinisters].sort((a, b) => b.seats - a.seats);
+
+                sortedMinisters.forEach(m => {
                     const positionClass = getPositionClass(m.position || 'Middle');
-                    for (let i = 0; i < m.ministers; i++) {
+                    // If this is the PM party, subtract 1 (PM already shown)
+                    const isPMParty = entry.primeMinister && m.name === entry.primeMinister.name;
+                    const ministersToShow = isPMParty ? m.ministers - 1 : m.ministers;
+
+                    for (let i = 0; i < ministersToShow && ministerIndex < 13; i++) {
                         html += `
-                            <div class="government-role">
-                                <div class="role-title">Minister</div>
-                                <div class="role-party">
-                                    <span class="party-dot" style="background: ${m.color};"></span>
-                                    <span class="party-name">${escapeHTML(m.name)}</span>
-                                </div>
+                            <div class="minister-card">
+                                <div class="minister-icon" style="background: ${m.color};">🏛️</div>
+                                <div class="minister-title">${ministerTitles[ministerIndex]}</div>
+                                <div class="minister-party">${escapeHTML(m.name)}</div>
+                                <span class="position-badge ${positionClass}" style="font-size: 0.65rem; margin-top: 5px;">${m.position || 'Unknown'}</span>
                             </div>
                         `;
+                        ministerIndex++;
                     }
                 });
             }
