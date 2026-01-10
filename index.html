@@ -1429,6 +1429,27 @@
             font-size: 1.1rem;
             font-weight: bold;
             margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn-resave-royals {
+            background: rgba(111, 66, 193, 0.3);
+            color: #b794f6;
+            border: 1px solid rgba(111, 66, 193, 0.5);
+            padding: 5px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-resave-royals:hover {
+            background: rgba(111, 66, 193, 0.5);
+            transform: translateY(-2px);
         }
 
         /* History Section Styles */
@@ -1947,6 +1968,7 @@
                         </button>
                         <div id="royalVotedStatus" class="royal-voted-status" style="display: none;">
                             ✅ Royal Couple Elected!
+                            <button class="btn-resave-royals" onclick="resaveRoyals()">🔄 Re-save</button>
                         </div>
                     </div>
                 </div>
@@ -3132,6 +3154,29 @@
 
             // Persist to storage so royals survive refresh
             saveToStorage();
+        }
+
+        function resaveRoyals() {
+            // Re-save royals to update realCountry from current entries
+            if (!savedKing && !savedQueen) return;
+
+            const kingCountryName = document.getElementById('kingCountry').textContent;
+            const queenCountryName = document.getElementById('queenCountry').textContent;
+            const kingEntry = entries.find(e => e.name === kingCountryName);
+            const queenEntry = entries.find(e => e.name === queenCountryName);
+
+            if (savedKing) {
+                savedKing.realCountry = kingEntry ? kingEntry.realCountry : null;
+            }
+            if (savedQueen) {
+                savedQueen.realCountry = queenEntry ? queenEntry.realCountry : null;
+            }
+
+            // Persist to storage
+            saveToStorage();
+
+            // Show confirmation
+            alert('Royal data re-saved! Real countries updated.');
         }
 
         function saveToHistory() {
