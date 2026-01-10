@@ -2755,10 +2755,39 @@
                     position: oppositionLeader.position
                 } : null,
 
-                // Royal Court
-                king: royalsVoted && savedKing ? { ...savedKing } : null,
-                queen: royalsVoted && savedQueen ? { ...savedQueen } : null
+                // Royal Court - capture from DOM if displayed
+                king: null,
+                queen: null
             };
+
+            // Capture Royal Court data from DOM if visible
+            const royalSection = document.getElementById('royalSection');
+            if (royalSection && royalSection.style.display !== 'none') {
+                const kingName = document.getElementById('kingName').textContent;
+                const queenName = document.getElementById('queenName').textContent;
+
+                if (kingName && kingName !== '-') {
+                    historyEntry.king = {
+                        name: kingName,
+                        country: document.getElementById('kingCountry').textContent,
+                        color: document.getElementById('kingCountryDot').style.background,
+                        position: document.getElementById('kingPosition').textContent,
+                        isQualified: document.getElementById('kingQualified').classList.contains('qualified'),
+                        inGovernment: document.getElementById('kingGovernment').classList.contains('in-government')
+                    };
+                }
+
+                if (queenName && queenName !== '-') {
+                    historyEntry.queen = {
+                        name: queenName,
+                        country: document.getElementById('queenCountry').textContent,
+                        color: document.getElementById('queenCountryDot').style.background,
+                        position: document.getElementById('queenPosition').textContent,
+                        isQualified: document.getElementById('queenQualified').classList.contains('qualified'),
+                        inGovernment: document.getElementById('queenGovernment').classList.contains('in-government')
+                    };
+                }
+            }
 
             history.push(historyEntry);
             saveHistoryToStorage();
