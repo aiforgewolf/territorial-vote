@@ -297,6 +297,17 @@
             gap: 8px;
         }
 
+        .stat-link {
+            color: #e94560;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .stat-link:hover {
+            color: #ff6b6b;
+            text-decoration: underline;
+        }
+
         .country-ranking {
             list-style: none;
             padding: 0;
@@ -410,23 +421,23 @@
             <h2>🌍 Country Statistics</h2>
             <div class="country-stats-grid">
                 <div class="country-stat-card">
-                    <h3>🏛️ Government Rule</h3>
+                    <h3><a href="country-stats.html?stat=govRule" class="stat-link">🏛️ Government Rule</a></h3>
                     <ul id="govRuleRanking" class="country-ranking"></ul>
                 </div>
                 <div class="country-stat-card">
-                    <h3>👑 Royal Court Presence</h3>
+                    <h3><a href="country-stats.html?stat=royal" class="stat-link">👑 Royal Court Presence</a></h3>
                     <ul id="royalRanking" class="country-ranking"></ul>
                 </div>
                 <div class="country-stat-card">
-                    <h3>📢 Opposition Leadership</h3>
+                    <h3><a href="country-stats.html?stat=opposition" class="stat-link">📢 Opposition Leadership</a></h3>
                     <ul id="oppositionRanking" class="country-ranking"></ul>
                 </div>
                 <div class="country-stat-card">
-                    <h3>🏛️ Committee Chairs</h3>
+                    <h3><a href="country-stats.html?stat=committee" class="stat-link">🏛️ Committee Chairs</a></h3>
                     <ul id="committeeRanking" class="country-ranking"></ul>
                 </div>
                 <div class="country-stat-card">
-                    <h3>🤝 Government Participation</h3>
+                    <h3><a href="country-stats.html?stat=coalition" class="stat-link">🤝 Government Participation</a></h3>
                     <ul id="coalitionRanking" class="country-ranking"></ul>
                 </div>
             </div>
