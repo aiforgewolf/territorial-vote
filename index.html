@@ -1345,6 +1345,45 @@
             margin-top: 8px;
         }
 
+        .royal-vote-section {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-royal-vote {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-royal-vote:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn-royal-vote:disabled {
+            background: linear-gradient(135deg, #888, #666);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .royal-voted-status {
+            color: #4ade80;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -1594,6 +1633,14 @@
                             <div class="royal-chance" id="queenChance">-</div>
                         </div>
                     </div>
+                    <div class="royal-vote-section">
+                        <button id="voteRoyalBtn" class="btn btn-royal-vote" onclick="voteForRoyals()">
+                            🗳️ Vote for Royal Couple
+                        </button>
+                        <div id="royalVotedStatus" class="royal-voted-status" style="display: none;">
+                            ✅ Royal Couple Elected!
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1610,6 +1657,9 @@
         let selectedParties = new Set();
         let currentAllocation = [];
         let allocationMethod = 'sainte-lague';
+        let royalsVoted = false;
+        let savedKing = null;
+        let savedQueen = null;
 
         // Party colors for visualization
         const partyColors = [
@@ -2150,6 +2200,8 @@
 
         function renderRoyalCourt(coalitionParties) {
             const royalSection = document.getElementById('royalSection');
+            const voteBtn = document.getElementById('voteRoyalBtn');
+            const votedStatus = document.getElementById('royalVotedStatus');
 
             // Only show if there's at least one party in coalition
             if (coalitionParties.length === 0) {
@@ -2162,6 +2214,24 @@
 
             if (entries.length < 2 || totalVotes === 0) {
                 royalSection.style.display = 'none';
+                return;
+            }
+
+            // If already voted, display saved royals
+            if (royalsVoted && savedKing && savedQueen) {
+                document.getElementById('kingName').textContent = savedKing.name;
+                document.getElementById('kingCountry').textContent = savedKing.country;
+                document.getElementById('kingCountryDot').style.background = savedKing.color;
+                document.getElementById('kingChance').textContent = `${savedKing.chance}% chance`;
+
+                document.getElementById('queenName').textContent = savedQueen.name;
+                document.getElementById('queenCountry').textContent = savedQueen.country;
+                document.getElementById('queenCountryDot').style.background = savedQueen.color;
+                document.getElementById('queenChance').textContent = `${savedQueen.chance}% chance`;
+
+                voteBtn.style.display = 'none';
+                votedStatus.style.display = 'block';
+                royalSection.style.display = 'block';
                 return;
             }
 
@@ -2201,7 +2271,33 @@
             document.getElementById('queenCountryDot').style.background = queenSelection.party.color;
             document.getElementById('queenChance').textContent = `${queenSelection.percentage.toFixed(1)}% chance`;
 
+            // Show vote button, hide voted status
+            voteBtn.style.display = 'inline-block';
+            votedStatus.style.display = 'none';
+
             royalSection.style.display = 'block';
+        }
+
+        function voteForRoyals() {
+            // Save current displayed royals
+            savedKing = {
+                name: document.getElementById('kingName').textContent,
+                country: document.getElementById('kingCountry').textContent,
+                color: document.getElementById('kingCountryDot').style.background,
+                chance: document.getElementById('kingChance').textContent.replace('% chance', '')
+            };
+            savedQueen = {
+                name: document.getElementById('queenName').textContent,
+                country: document.getElementById('queenCountry').textContent,
+                color: document.getElementById('queenCountryDot').style.background,
+                chance: document.getElementById('queenChance').textContent.replace('% chance', '')
+            };
+
+            royalsVoted = true;
+
+            // Update UI
+            document.getElementById('voteRoyalBtn').style.display = 'none';
+            document.getElementById('royalVotedStatus').style.display = 'block';
         }
 
         function updatePartyCards() {
@@ -2534,6 +2630,10 @@
             if (confirm('Are you sure you want to clear all entries?')) {
                 entries = [];
                 entryId = 0;
+                // Reset royal voting state
+                royalsVoted = false;
+                savedKing = null;
+                savedQueen = null;
                 renderResults();
             }
         }
