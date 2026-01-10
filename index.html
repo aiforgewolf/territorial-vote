@@ -2912,6 +2912,23 @@
                                 </div>
                             </div>
 
+                            <!-- Qualified Countries -->
+                            <div class="history-card" style="grid-column: span 2;">
+                                <h4>✅ Qualified Countries (${entry.qualifiedParties ? entry.qualifiedParties.length : 0})</h4>
+                                <div class="history-card-content">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                        ${entry.qualifiedParties ? entry.qualifiedParties.map(p => `
+                                            <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(0,0,0,0.2); border-radius: 15px; border: 1px solid ${p.color};">
+                                                <span class="history-party-dot" style="background: ${p.color}"></span>
+                                                <span style="font-size: 0.85rem;">${p.name}</span>
+                                                <span style="font-size: 0.75rem; color: #ffd700;">${p.realCountry || ''}</span>
+                                                <span style="font-size: 0.75rem; color: #a0a0a0;">(${p.seats})</span>
+                                            </div>
+                                        `).join('') : '<div>No qualified parties</div>'}
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Royal Court -->
                             <div class="history-card">
                                 <h4>👑 Royal Court</h4>
@@ -2920,12 +2937,18 @@
                                         <div class="history-royal">
                                             🤴 <strong>${entry.king.name}</strong>
                                             <span style="color: #a0a0a0;">from ${entry.king.country}</span>
+                                            ${entry.king.isQualified ?
+                                                '<span style="color: #4ade80; font-size: 0.75rem; margin-left: 5px;">✓ Qualified</span>' :
+                                                '<span style="color: #f87171; font-size: 0.75rem; margin-left: 5px;">✗ Not Qualified</span>'}
                                         </div>
                                     ` : '<div>No King elected</div>'}
                                     ${entry.queen ? `
                                         <div class="history-royal">
                                             👸 <strong>${entry.queen.name}</strong>
                                             <span style="color: #a0a0a0;">from ${entry.queen.country}</span>
+                                            ${entry.queen.isQualified ?
+                                                '<span style="color: #4ade80; font-size: 0.75rem; margin-left: 5px;">✓ Qualified</span>' :
+                                                '<span style="color: #f87171; font-size: 0.75rem; margin-left: 5px;">✗ Not Qualified</span>'}
                                         </div>
                                     ` : '<div>No Queen elected</div>'}
                                 </div>
