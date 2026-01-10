@@ -371,7 +371,9 @@
                         break;
 
                     case 'coalition':
+                        // Count +1 per year when country is part of coalition (not per party)
                         if (entry.coalitionParties) {
+                            const countriesInCoalition = new Set();
                             entry.coalitionParties.forEach(cp => {
                                 let realCountry = cp.realCountry;
                                 if (!realCountry && entry.qualifiedParties) {
@@ -379,8 +381,11 @@
                                     realCountry = match ? match.realCountry : null;
                                 }
                                 if (realCountry) {
-                                    counts[realCountry] = (counts[realCountry] || 0) + 1;
+                                    countriesInCoalition.add(realCountry);
                                 }
+                            });
+                            countriesInCoalition.forEach(country => {
+                                counts[country] = (counts[country] || 0) + 1;
                             });
                         }
                         break;

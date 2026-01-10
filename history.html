@@ -732,9 +732,11 @@
             });
 
             // Calculate coalition participation (any country in government coalition)
+            // Count +1 per year when country is part of coalition (not per party)
             const coalitionCounts = {};
             history.forEach(entry => {
                 if (entry.coalitionParties) {
+                    const countriesInCoalition = new Set();
                     entry.coalitionParties.forEach(cp => {
                         // Use saved realCountry, or look up from qualified parties
                         let realCountry = cp.realCountry;
@@ -743,8 +745,12 @@
                             realCountry = match ? match.realCountry : null;
                         }
                         if (realCountry) {
-                            coalitionCounts[realCountry] = (coalitionCounts[realCountry] || 0) + 1;
+                            countriesInCoalition.add(realCountry);
                         }
+                    });
+                    // Add 1 for each unique country in this entry's coalition
+                    countriesInCoalition.forEach(country => {
+                        coalitionCounts[country] = (coalitionCounts[country] || 0) + 1;
                     });
                 }
             });
