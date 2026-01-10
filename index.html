@@ -2190,81 +2190,99 @@
 
         // Render parliament view from history entry data
         function renderParliamentFromHistory(entry) {
-            const partyCardsContainer = document.getElementById('partyCards');
-            const hemicycleSeats = document.getElementById('hemicycleSeats');
+            const seatsBar = document.getElementById('seatsBar');
+            const hemicycle = document.getElementById('hemicycle');
+            const parliamentSummary = document.getElementById('parliamentSummary');
+            const allocationBody = document.getElementById('allocationBody');
 
-            // Generate party cards
-            let cardsHtml = '';
+            // Render seats bar
+            seatsBar.innerHTML = currentAllocation.map(party =>
+                `<div class="seats-bar-segment" style="flex: ${party.seats}; background: ${party.color};" title="${escapeHTML(party.name)}: ${party.seats} seats">
+                    ${party.seats >= 10 ? party.seats : ''}
+                </div>`
+            ).join('');
+
+            // Render hemicycle (visual representation)
+            let seatsHTML = '';
             currentAllocation.forEach(party => {
+                for (let i = 0; i < party.seats; i++) {
+                    seatsHTML += `<div class="seat" style="background: ${party.color};" title="${escapeHTML(party.name)}"></div>`;
+                }
+            });
+            hemicycle.innerHTML = seatsHTML;
+
+            // Render party cards (read-only, no onclick)
+            const totalVotes = entry.totalVotes || currentAllocation.reduce((sum, p) => sum + (p.votes || 0), 0);
+            parliamentSummary.innerHTML = currentAllocation.map(party => {
+                const votePercent = totalVotes > 0 ? (party.votes / totalVotes) * 100 : 0;
                 const isSelected = selectedParties.has(party.id);
                 const positionClass = getPositionClass(party.position || 'Middle');
-                cardsHtml += `
+                return `
                     <div class="party-card ${isSelected ? 'selected' : ''}" data-party-id="${party.id}">
+                        <div class="party-checkbox"></div>
                         <div class="party-color" style="background: ${party.color};"></div>
                         <div class="party-info">
                             <div class="party-name">${escapeHTML(party.name)}</div>
-                            <div class="real-country-tag">${party.realCountry || ''}</div>
-                            <div class="party-seats">${party.seats} seats</div>
-                            <span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span>
+                            <div class="party-details">${formatNumber(party.votes || 0)} votes (${votePercent.toFixed(1)}%)</div>
+                            <div class="party-position"><span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span></div>
                         </div>
-                        ${isSelected ? '<div class="selected-check">✓</div>' : ''}
+                        <div class="party-seats">${party.seats}</div>
                     </div>
                 `;
-            });
-            partyCardsContainer.innerHTML = cardsHtml;
+            }).join('');
 
-            // Generate hemicycle seats
-            const totalSeats = entry.parliamentSeats || 200;
-            let seatsHtml = '';
-            let seatIndex = 0;
-
-            currentAllocation.forEach(party => {
-                for (let i = 0; i < party.seats; i++) {
-                    const angle = 180 + (seatIndex / totalSeats) * 180;
-                    const row = Math.floor(seatIndex / 20);
-                    const radius = 150 + row * 25;
-                    seatsHtml += `<div class="seat" style="background: ${party.color};" title="${escapeHTML(party.name)}"></div>`;
-                    seatIndex++;
-                }
-            });
-            hemicycleSeats.innerHTML = seatsHtml;
+            // Render allocation table
+            allocationBody.innerHTML = currentAllocation.map(party => {
+                const votePercent = totalVotes > 0 ? (party.votes / totalVotes) * 100 : 0;
+                const seatPercent = (party.seats / (entry.parliamentSeats || 200)) * 100;
+                const positionClass = getPositionClass(party.position || 'Middle');
+                return `
+                    <tr>
+                        <td><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${party.color}; margin-right: 8px;"></span>${escapeHTML(party.name)}</td>
+                        <td><span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span></td>
+                        <td>${formatNumber(party.votes || 0)}</td>
+                        <td>${votePercent.toFixed(2)}%</td>
+                        <td style="font-weight: 700; color: ${party.color};">${party.seats}</td>
+                        <td>${seatPercent.toFixed(2)}%</td>
+                    </tr>
+                `;
+            }).join('');
 
             // Update coalition display
             updateCoalition();
 
-            // Render government composition if coalition exists
-            if (entry.coalitionParties && entry.coalitionParties.length > 0) {
-                renderGovernmentFromHistory(entry);
-            }
+            // Render government composition from history
+            renderGovernmentFromHistory(entry);
 
-            // Render parliamentary committees
-            if (entry.committees) {
-                renderCommitteesFromHistory(entry);
-            }
+            // Render parliamentary committees from history
+            renderCommitteesFromHistory(entry);
         }
 
         // Render government composition from history
         function renderGovernmentFromHistory(entry) {
-            const govComposition = document.getElementById('governmentComposition');
-            if (!govComposition) return;
+            const governmentGrid = document.getElementById('governmentGrid');
+            const governmentSection = document.getElementById('governmentSection');
 
-            govComposition.style.display = 'block';
+            if (!governmentGrid || !entry.coalitionParties || entry.coalitionParties.length === 0) {
+                if (governmentSection) governmentSection.style.display = 'none';
+                return;
+            }
 
-            let html = `<h3>Government Composition</h3>`;
+            governmentSection.style.display = 'block';
+
+            let html = '';
 
             // Prime Minister
             if (entry.primeMinister) {
                 const positionClass = getPositionClass(entry.primeMinister.position || 'Middle');
                 html += `
-                    <div class="pm-section">
-                        <div class="pm-title">Prime Minister</div>
-                        <div class="pm-card">
-                            <div class="pm-color" style="background: ${entry.primeMinister.color};"></div>
-                            <div class="pm-info">
-                                <div class="pm-name">${escapeHTML(entry.primeMinister.name)}</div>
-                                <div class="pm-country">${entry.primeMinister.realCountry || ''}</div>
-                                <span class="position-badge ${positionClass}">${entry.primeMinister.position || ''}</span>
-                            </div>
+                    <div class="government-role pm-role">
+                        <div class="role-title">👑 Prime Minister</div>
+                        <div class="role-party">
+                            <span class="party-dot" style="background: ${entry.primeMinister.color};"></span>
+                            <span class="party-name">${escapeHTML(entry.primeMinister.name)}</span>
+                            <span class="real-country">${entry.primeMinister.realCountry || ''}</span>
+                            <span class="position-badge ${positionClass}">${entry.primeMinister.position || ''}</span>
                         </div>
                     </div>
                 `;
@@ -2272,66 +2290,52 @@
 
             // Ministers
             if (entry.governmentMinisters && entry.governmentMinisters.length > 0) {
-                html += `<div class="ministers-section"><div class="ministers-title">Government Ministers (13)</div><div class="ministers-grid">`;
                 entry.governmentMinisters.forEach(m => {
                     const positionClass = getPositionClass(m.position || 'Middle');
-                    html += `
-                        <div class="minister-card">
-                            <div class="minister-color" style="background: ${m.color};"></div>
-                            <div class="minister-info">
-                                <div class="minister-name">${escapeHTML(m.name)}</div>
-                                <div class="minister-count">${m.ministers} minister${m.ministers !== 1 ? 's' : ''}</div>
-                                <span class="position-badge ${positionClass}" style="font-size: 0.65rem;">${m.position || ''}</span>
+                    for (let i = 0; i < m.ministers; i++) {
+                        html += `
+                            <div class="government-role">
+                                <div class="role-title">Minister</div>
+                                <div class="role-party">
+                                    <span class="party-dot" style="background: ${m.color};"></span>
+                                    <span class="party-name">${escapeHTML(m.name)}</span>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 });
-                html += `</div></div>`;
             }
 
-            // Opposition Leader
-            if (entry.oppositionLeader) {
-                const positionClass = getPositionClass(entry.oppositionLeader.position || 'Middle');
-                html += `
-                    <div class="opposition-section">
-                        <div class="opposition-title">Opposition Leader</div>
-                        <div class="opposition-card">
-                            <div class="opposition-color" style="background: ${entry.oppositionLeader.color};"></div>
-                            <div class="opposition-info">
-                                <div class="opposition-name">${escapeHTML(entry.oppositionLeader.name)}</div>
-                                <div class="opposition-country">${entry.oppositionLeader.realCountry || ''}</div>
-                                <span class="position-badge ${positionClass}">${entry.oppositionLeader.position || ''}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            govComposition.innerHTML = html;
+            governmentGrid.innerHTML = html;
         }
 
         // Render committees from history
         function renderCommitteesFromHistory(entry) {
-            const committeesContainer = document.getElementById('committeesContainer');
-            if (!committeesContainer || !entry.committees) return;
+            const committeesGrid = document.getElementById('committeesGrid');
+            const committeesSection = document.getElementById('committeesSection');
 
-            committeesContainer.style.display = 'block';
+            if (!committeesGrid || !entry.committees || entry.committees.length === 0) {
+                if (committeesSection) committeesSection.style.display = 'none';
+                return;
+            }
 
-            let html = `<h3>Parliamentary Committees</h3><div class="committees-grid">`;
+            committeesSection.style.display = 'block';
 
+            let html = '';
             entry.committees.forEach(c => {
                 html += `
                     <div class="committee-card">
                         <span class="committee-icon">${c.committeeIcon}</span>
                         <span class="committee-name">${c.committeeName}</span>
-                        <span class="committee-party-dot" style="background: ${c.partyColor};"></span>
-                        <span class="committee-party-name">${c.partyName}</span>
+                        <span class="committee-party">
+                            <span class="party-dot" style="background: ${c.partyColor};"></span>
+                            ${c.partyName}
+                        </span>
                     </div>
                 `;
             });
 
-            html += `</div>`;
-            committeesContainer.innerHTML = html;
+            committeesGrid.innerHTML = html;
         }
 
         // Load Royal Court from history
@@ -2349,10 +2353,10 @@
                 document.getElementById('kingPosition').textContent = entry.king.position || '';
                 const kingQualified = document.getElementById('kingQualified');
                 kingQualified.textContent = entry.king.isQualified ? '✓ Qualified' : '✗ Not Qualified';
-                kingQualified.className = entry.king.isQualified ? 'royal-status qualified' : 'royal-status not-qualified';
+                kingQualified.className = entry.king.isQualified ? 'royal-badge qualified' : 'royal-badge not-qualified';
                 const kingGov = document.getElementById('kingGovernment');
                 kingGov.textContent = entry.king.inGovernment ? '🏛️ In Government' : '📢 Opposition';
-                kingGov.className = entry.king.inGovernment ? 'royal-status in-government' : 'royal-status in-opposition';
+                kingGov.className = entry.king.inGovernment ? 'royal-badge in-government' : 'royal-badge opposition';
             } else {
                 document.getElementById('kingName').textContent = '-';
                 document.getElementById('kingCountry').textContent = '-';
@@ -2366,10 +2370,10 @@
                 document.getElementById('queenPosition').textContent = entry.queen.position || '';
                 const queenQualified = document.getElementById('queenQualified');
                 queenQualified.textContent = entry.queen.isQualified ? '✓ Qualified' : '✗ Not Qualified';
-                queenQualified.className = entry.queen.isQualified ? 'royal-status qualified' : 'royal-status not-qualified';
+                queenQualified.className = entry.queen.isQualified ? 'royal-badge qualified' : 'royal-badge not-qualified';
                 const queenGov = document.getElementById('queenGovernment');
                 queenGov.textContent = entry.queen.inGovernment ? '🏛️ In Government' : '📢 Opposition';
-                queenGov.className = entry.queen.inGovernment ? 'royal-status in-government' : 'royal-status in-opposition';
+                queenGov.className = entry.queen.inGovernment ? 'royal-badge in-government' : 'royal-badge opposition';
             } else {
                 document.getElementById('queenName').textContent = '-';
                 document.getElementById('queenCountry').textContent = '-';
