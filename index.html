@@ -2251,6 +2251,9 @@
             // Update coalition display
             updateCoalition();
 
+            // Render election analysis from history
+            renderElectionAnalysisFromHistory(entry);
+
             // Render government composition from history
             renderGovernmentFromHistory(entry);
 
@@ -2339,6 +2342,63 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        // Render election analysis from history
+        function renderElectionAnalysisFromHistory(entry) {
+            if (!entry.electionAnalysis) return;
+
+            const analysis = entry.electionAnalysis;
+
+            // Gallagher Index
+            const gallagherEl = document.getElementById('proportionalityIndex');
+            const gallagherCard = document.getElementById('proportionalityCard');
+            if (gallagherEl && gallagherCard) {
+                const gallagher = analysis.gallagherIndex || 0;
+                gallagherEl.textContent = gallagher.toFixed(2);
+                gallagherCard.className = 'analysis-card';
+                if (gallagher < 5) {
+                    gallagherCard.classList.add('good');
+                } else if (gallagher < 10) {
+                    gallagherCard.classList.add('warning');
+                } else {
+                    gallagherCard.classList.add('bad');
+                }
+            }
+
+            // Wasted Votes
+            const wastedEl = document.getElementById('wastedVotes');
+            const wastedCard = document.getElementById('wastedVotesCard');
+            const wastedDetail = document.getElementById('wastedVotesDetail');
+            if (wastedEl && wastedCard && analysis.wastedVotes) {
+                const wasted = analysis.wastedVotes;
+                wastedEl.textContent = wasted.percent.toFixed(1) + '%';
+                wastedDetail.textContent = `${formatNumber(wasted.votes)} votes lost`;
+                wastedCard.className = 'analysis-card';
+                if (wasted.percent < 5) {
+                    wastedCard.classList.add('good');
+                } else if (wasted.percent < 15) {
+                    wastedCard.classList.add('warning');
+                } else {
+                    wastedCard.classList.add('bad');
+                }
+            }
+
+            // Effective Number of Parties
+            const effectiveEl = document.getElementById('effectiveParties');
+            const effectiveCard = document.getElementById('effectivePartiesCard');
+            if (effectiveEl && effectiveCard) {
+                const effectiveN = analysis.effectiveParties || 0;
+                effectiveEl.textContent = effectiveN.toFixed(2);
+                effectiveCard.className = 'analysis-card';
+                if (effectiveN <= 3) {
+                    effectiveCard.classList.add('good');
+                } else if (effectiveN <= 5) {
+                    effectiveCard.classList.add('warning');
+                } else {
+                    effectiveCard.classList.add('bad');
+                }
+            }
         }
 
         // Load Royal Court from history
@@ -3181,6 +3241,13 @@
 
                 // Parliamentary Committees
                 committees: committeeAssignments,
+
+                // Election Analysis
+                electionAnalysis: {
+                    gallagherIndex: calculateGallagherIndex(qualifiedParties, totalVotes, parliamentSeats),
+                    wastedVotes: calculateWastedVotes(entries, totalVotes, threshold),
+                    effectiveParties: calculateEffectiveParties(qualifiedParties, parliamentSeats)
+                },
 
                 // Royal Court - capture from DOM if displayed
                 king: null,
