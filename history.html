@@ -619,14 +619,24 @@
             });
 
             // Calculate royal court presence (King + Queen countries)
+            // Look up real country from qualified parties
             const royalCounts = {};
             history.forEach(entry => {
-                if (entry.king && entry.king.country) {
-                    // King's country is stored as the party country name
-                    royalCounts[entry.king.country] = (royalCounts[entry.king.country] || 0) + 1;
+                if (entry.king && entry.king.country && entry.qualifiedParties) {
+                    // Find the real country for the king's party
+                    const kingParty = entry.qualifiedParties.find(p => p.name === entry.king.country);
+                    const realCountry = kingParty ? kingParty.realCountry : entry.king.country;
+                    if (realCountry) {
+                        royalCounts[realCountry] = (royalCounts[realCountry] || 0) + 1;
+                    }
                 }
-                if (entry.queen && entry.queen.country) {
-                    royalCounts[entry.queen.country] = (royalCounts[entry.queen.country] || 0) + 1;
+                if (entry.queen && entry.queen.country && entry.qualifiedParties) {
+                    // Find the real country for the queen's party
+                    const queenParty = entry.qualifiedParties.find(p => p.name === entry.queen.country);
+                    const realCountry = queenParty ? queenParty.realCountry : entry.queen.country;
+                    if (realCountry) {
+                        royalCounts[realCountry] = (royalCounts[realCountry] || 0) + 1;
+                    }
                 }
             });
 
