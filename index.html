@@ -2898,6 +2898,37 @@
             'UK': 'United Kingdom'
         };
 
+        // Country ID to name mapping (from Natural Earth / world-atlas)
+        const countryIdToName = {
+            '4': 'Afghanistan', '8': 'Albania', '12': 'Algeria', '24': 'Angola',
+            '32': 'Argentina', '36': 'Australia', '40': 'Austria', '50': 'Bangladesh',
+            '56': 'Belgium', '68': 'Bolivia', '76': 'Brazil', '100': 'Bulgaria',
+            '104': 'Myanmar', '116': 'Cambodia', '120': 'Cameroon', '124': 'Canada',
+            '152': 'Chile', '156': 'China', '170': 'Colombia', '180': 'Democratic Republic of the Congo',
+            '188': 'Costa Rica', '191': 'Croatia', '192': 'Cuba', '196': 'Cyprus',
+            '203': 'Czech Republic', '208': 'Denmark', '214': 'Dominican Republic',
+            '218': 'Ecuador', '818': 'Egypt', '222': 'El Salvador', '231': 'Ethiopia',
+            '246': 'Finland', '250': 'France', '276': 'Germany', '288': 'Ghana',
+            '300': 'Greece', '320': 'Guatemala', '332': 'Haiti', '340': 'Honduras',
+            '348': 'Hungary', '356': 'India', '360': 'Indonesia', '364': 'Iran',
+            '368': 'Iraq', '372': 'Ireland', '376': 'Israel', '380': 'Italy',
+            '384': 'Ivory Coast', '392': 'Japan', '400': 'Jordan', '398': 'Kazakhstan',
+            '404': 'Kenya', '408': 'North Korea', '410': 'South Korea', '414': 'Kuwait',
+            '422': 'Lebanon', '434': 'Libya', '458': 'Malaysia', '484': 'Mexico',
+            '504': 'Morocco', '508': 'Mozambique', '528': 'Netherlands', '554': 'New Zealand',
+            '566': 'Nigeria', '578': 'Norway', '586': 'Pakistan', '591': 'Panama',
+            '598': 'Papua New Guinea', '600': 'Paraguay', '604': 'Peru', '608': 'Philippines',
+            '616': 'Poland', '620': 'Portugal', '634': 'Qatar', '642': 'Romania',
+            '643': 'Russia', '682': 'Saudi Arabia', '686': 'Senegal', '688': 'Serbia',
+            '702': 'Singapore', '703': 'Slovakia', '704': 'Vietnam', '705': 'Slovenia',
+            '710': 'South Africa', '724': 'Spain', '144': 'Sri Lanka', '729': 'Sudan',
+            '752': 'Sweden', '756': 'Switzerland', '760': 'Syria', '158': 'Taiwan',
+            '764': 'Thailand', '788': 'Tunisia', '792': 'Turkey', '800': 'Uganda',
+            '804': 'Ukraine', '784': 'United Arab Emirates', '826': 'United Kingdom',
+            '840': 'United States of America', '858': 'Uruguay', '860': 'Uzbekistan',
+            '862': 'Venezuela', '887': 'Yemen', '894': 'Zambia', '716': 'Zimbabwe'
+        };
+
         // Cache for world map data
         let worldMapData = null;
 
@@ -2959,12 +2990,11 @@
             // Convert TopoJSON to GeoJSON
             const countries = topojson.feature(worldMapData, worldMapData.objects.countries);
 
-            // Get country names from the data
-            const countryNames = await d3.tsv('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.tsv');
-            const nameById = {};
-            countryNames.forEach(d => {
-                nameById[d.id] = d.name;
-            });
+            // Function to get country name from ID
+            function getCountryName(id) {
+                const idStr = String(id);
+                return countryIdToName[idStr] || 'Unknown';
+            }
 
             // Function to get our country name from the map data
             function getOurCountryName(mapName) {
@@ -2979,27 +3009,27 @@
                 .append('path')
                 .attr('d', path)
                 .attr('fill', d => {
-                    const mapName = nameById[d.id] || '';
+                    const mapName = getCountryName(d.id);
                     const ourName = getOurCountryName(mapName);
                     return coalitionCountries[ourName] || '#2a2a4a';
                 })
                 .attr('stroke', d => {
-                    const mapName = nameById[d.id] || '';
+                    const mapName = getCountryName(d.id);
                     const ourName = getOurCountryName(mapName);
                     return coalitionCountries[ourName] ? '#ffd700' : '#3a3a5a';
                 })
                 .attr('stroke-width', d => {
-                    const mapName = nameById[d.id] || '';
+                    const mapName = getCountryName(d.id);
                     const ourName = getOurCountryName(mapName);
                     return coalitionCountries[ourName] ? 1.5 : 0.5;
                 })
                 .attr('class', d => {
-                    const mapName = nameById[d.id] || '';
+                    const mapName = getCountryName(d.id);
                     const ourName = getOurCountryName(mapName);
                     return coalitionCountries[ourName] ? 'coalition-country' : '';
                 })
                 .on('mouseover', function(event, d) {
-                    const mapName = nameById[d.id] || 'Unknown';
+                    const mapName = getCountryName(d.id);
                     const ourName = getOurCountryName(mapName);
                     const isCoalition = coalitionCountries[ourName];
 
