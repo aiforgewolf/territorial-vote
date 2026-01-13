@@ -2013,6 +2013,7 @@
                                 <span class="royal-country-dot" id="kingCountryDot"></span>
                                 <span class="royal-country-name" id="kingCountry">-</span>
                             </div>
+                            <div class="royal-real-country" id="kingRealCountry" style="color: #ffd700; font-size: 0.85rem; margin-top: 3px;">-</div>
                             <div class="royal-position" id="kingPosition">-</div>
                             <div class="royal-status-badges">
                                 <span class="royal-badge" id="kingQualified"></span>
@@ -2028,6 +2029,7 @@
                                 <span class="royal-country-dot" id="queenCountryDot"></span>
                                 <span class="royal-country-name" id="queenCountry">-</span>
                             </div>
+                            <div class="royal-real-country" id="queenRealCountry" style="color: #ffd700; font-size: 0.85rem; margin-top: 3px;">-</div>
                             <div class="royal-position" id="queenPosition">-</div>
                             <div class="royal-status-badges">
                                 <span class="royal-badge" id="queenQualified"></span>
@@ -2322,6 +2324,7 @@
                         <div class="party-color" style="background: ${party.color};"></div>
                         <div class="party-info">
                             <div class="party-name">${escapeHTML(party.name)}</div>
+                            ${party.realCountry ? `<div style="color: #ffd700; font-size: 0.75rem;">🌍 ${party.realCountry}</div>` : ''}
                             <div class="party-details">${formatNumber(party.votes || 0)} votes (${votePercent.toFixed(1)}%)</div>
                             <div class="party-position"><span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span></div>
                         </div>
@@ -2337,7 +2340,11 @@
                 const positionClass = getPositionClass(party.position || 'Middle');
                 return `
                     <tr>
-                        <td><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${party.color}; margin-right: 8px;"></span>${escapeHTML(party.name)}</td>
+                        <td>
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${party.color}; margin-right: 8px;"></span>
+                            ${escapeHTML(party.name)}
+                            ${party.realCountry ? `<span style="color: #ffd700; font-size: 0.8rem; margin-left: 5px;">🌍 ${party.realCountry}</span>` : ''}
+                        </td>
                         <td><span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span></td>
                         <td>${formatNumber(party.votes || 0)}</td>
                         <td>${votePercent.toFixed(2)}%</td>
@@ -3309,12 +3316,14 @@
                 document.getElementById('kingName').textContent = savedKing.name;
                 document.getElementById('kingCountry').textContent = savedKing.country;
                 document.getElementById('kingCountryDot').style.background = savedKing.color;
+                document.getElementById('kingRealCountry').textContent = savedKing.realCountry ? `🌍 ${savedKing.realCountry}` : '';
                 document.getElementById('kingChance').textContent = `${savedKing.chance}% chance`;
                 updateRoyalStatusDisplay('king', savedKing);
 
                 document.getElementById('queenName').textContent = savedQueen.name;
                 document.getElementById('queenCountry').textContent = savedQueen.country;
                 document.getElementById('queenCountryDot').style.background = savedQueen.color;
+                document.getElementById('queenRealCountry').textContent = savedQueen.realCountry ? `🌍 ${savedQueen.realCountry}` : '';
                 document.getElementById('queenChance').textContent = `${savedQueen.chance}% chance`;
                 updateRoyalStatusDisplay('queen', savedQueen);
 
@@ -3355,6 +3364,7 @@
             document.getElementById('kingName').textContent = kingName;
             document.getElementById('kingCountry').textContent = kingSelection.party.name;
             document.getElementById('kingCountryDot').style.background = kingSelection.party.color;
+            document.getElementById('kingRealCountry').textContent = kingSelection.party.realCountry ? `🌍 ${kingSelection.party.realCountry}` : '';
             document.getElementById('kingChance').textContent = `${kingSelection.percentage.toFixed(1)}% chance`;
             updateRoyalStatusDisplay('king', {
                 position: kingSelection.party.position || 'Unknown',
@@ -3366,6 +3376,7 @@
             document.getElementById('queenName').textContent = queenName;
             document.getElementById('queenCountry').textContent = queenSelection.party.name;
             document.getElementById('queenCountryDot').style.background = queenSelection.party.color;
+            document.getElementById('queenRealCountry').textContent = queenSelection.party.realCountry ? `🌍 ${queenSelection.party.realCountry}` : '';
             document.getElementById('queenChance').textContent = `${queenSelection.percentage.toFixed(1)}% chance`;
             updateRoyalStatusDisplay('queen', {
                 position: queenSelection.party.position || 'Unknown',
@@ -3845,6 +3856,7 @@
                         <div class="party-color" style="background: ${party.color};"></div>
                         <div class="party-info">
                             <div class="party-name">${escapeHTML(party.name)}</div>
+                            ${party.realCountry ? `<div style="color: #ffd700; font-size: 0.75rem;">🌍 ${party.realCountry}</div>` : ''}
                             <div class="party-details">${formatNumber(party.votes)} votes (${votePercent.toFixed(1)}%)</div>
                             <div class="party-position"><span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span></div>
                         </div>
@@ -3862,7 +3874,11 @@
                 const positionClass = getPositionClass(party.position || 'Middle');
                 return `
                     <tr>
-                        <td><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${party.color}; margin-right: 8px;"></span>${escapeHTML(party.name)}</td>
+                        <td>
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${party.color}; margin-right: 8px;"></span>
+                            ${escapeHTML(party.name)}
+                            ${party.realCountry ? `<span style="color: #ffd700; font-size: 0.8rem; margin-left: 5px;">🌍 ${party.realCountry}</span>` : ''}
+                        </td>
                         <td><span class="position-badge ${positionClass}">${party.position || 'Unknown'}</span></td>
                         <td>${formatNumber(party.votes)}</td>
                         <td>${votePercent.toFixed(2)}%</td>
