@@ -105,14 +105,139 @@
         }
 
         .history-year {
-            font-size: 1.8rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #ffd700;
+            min-width: 70px;
         }
 
         .history-date {
             color: #a0a0a0;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+        }
+
+        /* Compact history row styles */
+        .history-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 1fr 2fr 1fr auto;
+            gap: 15px;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .history-row:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .history-cell {
+            font-size: 0.85rem;
+            color: #ddd;
+        }
+
+        .history-cell-label {
+            font-size: 0.65rem;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .history-cell-value {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .history-real-country {
+            color: #ffd700;
+            font-size: 0.75rem;
+        }
+
+        .history-coalition-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .history-coalition-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .history-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .history-btn-detail {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .history-btn-detail:hover {
+            background: rgba(59, 130, 246, 0.4);
+        }
+
+        .history-btn-delete {
+            background: rgba(220, 53, 69, 0.2);
+            color: #f87171;
+        }
+
+        .history-btn-delete:hover {
+            background: rgba(220, 53, 69, 0.4);
+        }
+
+        .history-header-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 1fr 2fr 1fr auto;
+            gap: 15px;
+            padding: 8px 15px;
+            font-size: 0.7rem;
+            color: #888;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .history-row, .history-header-row {
+                grid-template-columns: 60px 1fr 1fr 1fr 1.5fr 1fr auto;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .history-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .history-header-row {
+                display: none;
+            }
+            .history-cell-label {
+                display: block;
+            }
         }
 
         .history-grid {
@@ -525,154 +650,97 @@
             clearBtn.style.display = 'block';
             updatePositionBtn.style.display = 'block';
 
+            // Render compact history header
+            let html = `
+                <div class="history-header-row">
+                    <span>Year</span>
+                    <span>Prime Minister</span>
+                    <span>King</span>
+                    <span>Queen</span>
+                    <span>Coalition Partners</span>
+                    <span>Opposition</span>
+                    <span>Actions</span>
+                </div>
+            `;
+
             // Render history entries in reverse chronological order
-            let html = '';
             [...history].reverse().forEach((entry, reverseIndex) => {
                 const originalIndex = history.length - 1 - reverseIndex;
-                const savedDate = new Date(entry.savedAt).toLocaleDateString();
+
+                // Get king's real country
+                let kingRealCountry = entry.king?.realCountry || '';
+                if (!kingRealCountry && entry.king?.country && entry.qualifiedParties) {
+                    const kingParty = entry.qualifiedParties.find(p => p.name === entry.king.country);
+                    kingRealCountry = kingParty?.realCountry || '';
+                }
+
+                // Get queen's real country
+                let queenRealCountry = entry.queen?.realCountry || '';
+                if (!queenRealCountry && entry.queen?.country && entry.qualifiedParties) {
+                    const queenParty = entry.qualifiedParties.find(p => p.name === entry.queen.country);
+                    queenRealCountry = queenParty?.realCountry || '';
+                }
 
                 html += `
-                    <div class="history-entry">
-                        <div class="history-entry-header">
-                            <span class="history-year">Year ${entry.year}</span>
-                            <a href="index.html?historyIndex=${originalIndex}" class="btn-view-detail">View Detail</a>
-                            <button class="btn-resave-entry" onclick="resaveEntry(${originalIndex})">🔄 Re-save</button>
-                            <button class="btn-delete-entry" onclick="deleteEntry(${originalIndex})">🗑️ Delete</button>
-                            <span class="history-date">Saved: ${savedDate}</span>
+                    <div class="history-row">
+                        <div class="history-cell">
+                            <div class="history-cell-label">Year</div>
+                            <span class="history-year">${entry.year}</span>
                         </div>
-                        <div class="history-grid">
-                            <!-- Government -->
-                            <div class="history-card">
-                                <h4>Government</h4>
-                                <div class="history-card-content">
-                                    ${entry.primeMinister ? `
-                                        <div><strong>Prime Minister:</strong></div>
-                                        <div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
-                                            <span class="history-party-dot" style="background: ${entry.primeMinister.color}"></span>
-                                            ${entry.primeMinister.name}
-                                            <span style="color: #ffd700; font-size: 0.8rem;">${entry.primeMinister.realCountry || ''}</span>
-                                        </div>
-                                    ` : '<div>No government formed</div>'}
-                                    <div style="margin-top: 8px;">
-                                        <strong>Coalition:</strong> ${entry.coalitionSeats} seats
-                                        ${entry.hasMajority ? '<span style="color: #4ade80;"> (Majority)</span>' : '<span style="color: #f87171;"> (Minority)</span>'}
-                                    </div>
-                                </div>
+                        <div class="history-cell">
+                            <div class="history-cell-label">Prime Minister</div>
+                            <div class="history-cell-value">
+                                ${entry.primeMinister ? `
+                                    <span class="history-party-dot" style="background: ${entry.primeMinister.color}"></span>
+                                    <span>${entry.primeMinister.name}</span>
+                                    <span class="history-real-country">${entry.primeMinister.realCountry || ''}</span>
+                                ` : '-'}
                             </div>
-
-                            <!-- Coalition Parties -->
-                            <div class="history-card">
-                                <h4>Coalition Parties (${entry.coalitionParties.length})</h4>
-                                <div class="history-card-content">
-                                    <ul>
-                                        ${entry.coalitionParties.map(p => `
-                                            <li>
-                                                <span class="history-party-dot" style="background: ${p.color}"></span>
-                                                ${p.name} (${p.seats})
-                                            </li>
-                                        `).join('')}
-                                    </ul>
-                                </div>
+                        </div>
+                        <div class="history-cell">
+                            <div class="history-cell-label">King</div>
+                            <div class="history-cell-value">
+                                ${entry.king ? `
+                                    <span>🤴 ${entry.king.name}</span>
+                                    <span class="history-real-country">${kingRealCountry}</span>
+                                ` : '-'}
                             </div>
-
-                            <!-- Qualified Countries -->
-                            <div class="history-card" style="grid-column: span 2;">
-                                <h4>Qualified Countries (${entry.qualifiedParties ? entry.qualifiedParties.length : 0})</h4>
-                                <div class="history-card-content">
-                                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                                        ${entry.qualifiedParties ? entry.qualifiedParties.map(p => `
-                                            <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(0,0,0,0.2); border-radius: 15px; border: 1px solid ${p.color};">
-                                                <span class="history-party-dot" style="background: ${p.color}"></span>
-                                                <span style="font-size: 0.85rem;">${p.name}</span>
-                                                <span style="font-size: 0.75rem; color: #ffd700;">${p.realCountry || ''}</span>
-                                                <span style="font-size: 0.75rem; color: #a0a0a0;">(${p.seats})</span>
-                                            </div>
-                                        `).join('') : '<div>No qualified parties</div>'}
-                                    </div>
-                                </div>
+                        </div>
+                        <div class="history-cell">
+                            <div class="history-cell-label">Queen</div>
+                            <div class="history-cell-value">
+                                ${entry.queen ? `
+                                    <span>👸 ${entry.queen.name}</span>
+                                    <span class="history-real-country">${queenRealCountry}</span>
+                                ` : '-'}
                             </div>
-
-                            <!-- Royal Court -->
-                            <div class="history-card">
-                                <h4>Royal Court</h4>
-                                <div class="history-card-content">
-                                    ${entry.king ? `
-                                        <div class="history-royal">
-                                            <span>King <strong>${entry.king.name}</strong></span>
-                                            <span style="color: #a0a0a0;">from ${entry.king.country}</span>
-                                            ${entry.king.isQualified ?
-                                                '<span style="color: #4ade80; font-size: 0.75rem;">Qualified</span>' :
-                                                '<span style="color: #f87171; font-size: 0.75rem;">Not Qualified</span>'}
-                                        </div>
-                                    ` : '<div>No King elected</div>'}
-                                    ${entry.queen ? `
-                                        <div class="history-royal">
-                                            <span>Queen <strong>${entry.queen.name}</strong></span>
-                                            <span style="color: #a0a0a0;">from ${entry.queen.country}</span>
-                                            ${entry.queen.isQualified ?
-                                                '<span style="color: #4ade80; font-size: 0.75rem;">Qualified</span>' :
-                                                '<span style="color: #f87171; font-size: 0.75rem;">Not Qualified</span>'}
-                                        </div>
-                                    ` : '<div>No Queen elected</div>'}
-                                </div>
+                        </div>
+                        <div class="history-cell">
+                            <div class="history-cell-label">Coalition</div>
+                            <div class="history-coalition-tags">
+                                ${entry.coalitionParties.map(p => `
+                                    <span class="history-coalition-tag">
+                                        <span class="history-party-dot" style="background: ${p.color}"></span>
+                                        ${p.realCountry || p.name}
+                                    </span>
+                                `).join('')}
+                                ${entry.hasMajority ?
+                                    '<span style="color: #4ade80; font-size: 0.7rem; margin-left: 4px;">✓</span>' :
+                                    '<span style="color: #f87171; font-size: 0.7rem; margin-left: 4px;">✗</span>'}
                             </div>
-
-                            <!-- Opposition -->
-                            <div class="history-card">
-                                <h4>Opposition</h4>
-                                <div class="history-card-content">
-                                    ${entry.oppositionLeader ? `
-                                        <div><strong>Opposition Leader:</strong></div>
-                                        <div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
-                                            <span class="history-party-dot" style="background: ${entry.oppositionLeader.color}"></span>
-                                            ${entry.oppositionLeader.name}
-                                            <span style="color: #ffd700; font-size: 0.8rem;">${entry.oppositionLeader.realCountry || ''}</span>
-                                        </div>
-                                    ` : '<div>No opposition</div>'}
-                                </div>
+                        </div>
+                        <div class="history-cell">
+                            <div class="history-cell-label">Opposition</div>
+                            <div class="history-cell-value">
+                                ${entry.oppositionLeader ? `
+                                    <span class="history-party-dot" style="background: ${entry.oppositionLeader.color}"></span>
+                                    <span class="history-real-country">${entry.oppositionLeader.realCountry || entry.oppositionLeader.name}</span>
+                                ` : '-'}
                             </div>
-
-                            <!-- Parliament Stats -->
-                            <div class="history-card">
-                                <h4>Parliament Stats</h4>
-                                <div class="history-card-content">
-                                    <div>Total Seats: ${entry.parliamentSeats}</div>
-                                    <div>Threshold: ${entry.threshold}%</div>
-                                    <div>Qualified Parties: ${entry.qualifiedParties ? entry.qualifiedParties.length : 0}</div>
-                                    <div>Total Votes: ${entry.totalVotes ? entry.totalVotes.toLocaleString() : 'N/A'}</div>
-                                </div>
-                            </div>
-
-                            <!-- Ministers -->
-                            <div class="history-card">
-                                <h4>Government Ministers</h4>
-                                <div class="history-card-content">
-                                    <ul>
-                                        ${entry.governmentMinisters && entry.governmentMinisters.length > 0 ? entry.governmentMinisters.map(m => `
-                                            <li>
-                                                <span class="history-party-dot" style="background: ${m.color}"></span>
-                                                ${m.name}: ${m.ministers} minister${m.ministers !== 1 ? 's' : ''}
-                                            </li>
-                                        `).join('') : '<li>No ministers</li>'}
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <!-- Parliamentary Committees -->
-                            <div class="history-card" style="grid-column: span 2;">
-                                <h4>Parliamentary Committees (${entry.committees ? entry.committees.length : 0})</h4>
-                                <div class="history-card-content">
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
-                                        ${entry.committees ? entry.committees.map(c => `
-                                            <div style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: rgba(0,0,0,0.2); border-radius: 6px; border-left: 3px solid ${c.partyColor};">
-                                                <span>${c.committeeIcon}</span>
-                                                <span style="font-size: 0.8rem;">${c.committeeName}</span>
-                                                <span class="history-party-dot" style="background: ${c.partyColor}; margin-left: auto;"></span>
-                                            </div>
-                                        `).join('') : '<div>No committees</div>'}
-                                    </div>
-                                </div>
-                            </div>
+                        </div>
+                        <div class="history-cell history-actions">
+                            <a href="index.html?historyIndex=${originalIndex}" class="history-btn history-btn-detail">Detail</a>
+                            <button class="history-btn history-btn-delete" onclick="deleteEntry(${originalIndex})">🗑️</button>
                         </div>
                     </div>
                 `;
