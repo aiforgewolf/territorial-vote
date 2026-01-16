@@ -2937,7 +2937,7 @@
         // Country ID to name mapping (from Natural Earth / world-atlas)
         const countryIdToName = {
             '4': 'Afghanistan', '8': 'Albania', '12': 'Algeria', '24': 'Angola',
-            '32': 'Argentina', '36': 'Australia', '40': 'Austria', '50': 'Bangladesh',
+            '32': 'Argentina', '36': 'Australia', '036': 'Australia', '40': 'Austria', '50': 'Bangladesh',
             '56': 'Belgium', '68': 'Bolivia', '76': 'Brazil', '100': 'Bulgaria',
             '104': 'Myanmar', '116': 'Cambodia', '120': 'Cameroon', '124': 'Canada',
             '152': 'Chile', '156': 'China', '170': 'Colombia', '180': 'Democratic Republic of the Congo',
@@ -3029,7 +3029,15 @@
             // Function to get country name from ID
             function getCountryName(id) {
                 const idStr = String(id);
-                return countryIdToName[idStr] || 'Unknown';
+                // Try direct lookup
+                if (countryIdToName[idStr]) return countryIdToName[idStr];
+                // Try with leading zeros (ISO 3166-1 numeric format)
+                const paddedId = idStr.padStart(3, '0');
+                if (countryIdToName[paddedId]) return countryIdToName[paddedId];
+                // Try without leading zeros
+                const numericId = String(parseInt(idStr, 10));
+                if (countryIdToName[numericId]) return countryIdToName[numericId];
+                return 'Unknown';
             }
 
             // Function to get our country name from the map data
