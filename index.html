@@ -2525,12 +2525,34 @@
 
             royalSection.style.display = 'block';
 
+            // Hide vote button and show voted status in history view
+            const voteBtn = document.getElementById('voteRoyalBtn');
+            const votedStatus = document.getElementById('royalVotedStatus');
+            if (voteBtn) voteBtn.style.display = 'none';
+            if (votedStatus) votedStatus.style.display = 'block';
+
+            // Get real countries from history entry
+            let kingRealCountry = entry.king?.realCountry || '';
+            if (!kingRealCountry && entry.king?.country && entry.qualifiedParties) {
+                const kingParty = entry.qualifiedParties.find(p => p.name === entry.king.country);
+                kingRealCountry = kingParty?.realCountry || '';
+            }
+
+            let queenRealCountry = entry.queen?.realCountry || '';
+            if (!queenRealCountry && entry.queen?.country && entry.qualifiedParties) {
+                const queenParty = entry.qualifiedParties.find(p => p.name === entry.queen.country);
+                queenRealCountry = queenParty?.realCountry || '';
+            }
+
             // King
             if (entry.king) {
                 document.getElementById('kingName').textContent = entry.king.name;
                 document.getElementById('kingCountry').textContent = entry.king.country;
-                document.getElementById('kingCountryDot').style.background = entry.king.color;
+                document.getElementById('kingCountryDot').style.background = entry.king.color || '#888';
+                document.getElementById('kingRealCountry').textContent = kingRealCountry ? `🌍 ${kingRealCountry}` : '';
+                document.getElementById('kingChance').textContent = entry.king.chance ? `${entry.king.chance}% chance` : '';
                 document.getElementById('kingPosition').textContent = entry.king.position || '';
+                document.getElementById('kingPosition').className = `royal-position position-badge ${getPositionClass(entry.king.position || 'Middle')}`;
                 const kingQualified = document.getElementById('kingQualified');
                 kingQualified.textContent = entry.king.isQualified ? '✓ Qualified' : '✗ Not Qualified';
                 kingQualified.className = entry.king.isQualified ? 'royal-badge qualified' : 'royal-badge not-qualified';
@@ -2540,14 +2562,19 @@
             } else {
                 document.getElementById('kingName').textContent = '-';
                 document.getElementById('kingCountry').textContent = '-';
+                document.getElementById('kingRealCountry').textContent = '';
+                document.getElementById('kingChance').textContent = '';
             }
 
             // Queen
             if (entry.queen) {
                 document.getElementById('queenName').textContent = entry.queen.name;
                 document.getElementById('queenCountry').textContent = entry.queen.country;
-                document.getElementById('queenCountryDot').style.background = entry.queen.color;
+                document.getElementById('queenCountryDot').style.background = entry.queen.color || '#888';
+                document.getElementById('queenRealCountry').textContent = queenRealCountry ? `🌍 ${queenRealCountry}` : '';
+                document.getElementById('queenChance').textContent = entry.queen.chance ? `${entry.queen.chance}% chance` : '';
                 document.getElementById('queenPosition').textContent = entry.queen.position || '';
+                document.getElementById('queenPosition').className = `royal-position position-badge ${getPositionClass(entry.queen.position || 'Middle')}`;
                 const queenQualified = document.getElementById('queenQualified');
                 queenQualified.textContent = entry.queen.isQualified ? '✓ Qualified' : '✗ Not Qualified';
                 queenQualified.className = entry.queen.isQualified ? 'royal-badge qualified' : 'royal-badge not-qualified';
@@ -2557,6 +2584,8 @@
             } else {
                 document.getElementById('queenName').textContent = '-';
                 document.getElementById('queenCountry').textContent = '-';
+                document.getElementById('queenRealCountry').textContent = '';
+                document.getElementById('queenChance').textContent = '';
             }
         }
 
@@ -3268,6 +3297,11 @@
             const royalSection = document.getElementById('royalSection');
             const voteBtn = document.getElementById('voteRoyalBtn');
             const votedStatus = document.getElementById('royalVotedStatus');
+
+            // Skip rendering in history/read-only mode - loadRoyalCourtFromHistory handles this
+            if (document.body.classList.contains('read-only-mode')) {
+                return;
+            }
 
             // Only show if there's at least one party in coalition
             if (coalitionParties.length === 0) {
