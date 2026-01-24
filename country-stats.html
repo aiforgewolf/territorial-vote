@@ -301,7 +301,9 @@
                 icon: '🏛️',
                 title: 'Committee Chairs',
                 description: 'Countries by parliamentary committee chairmanships',
-                unit: 'chairs'
+                unit: 'chairs',
+                link: 'committees-stats.html',
+                linkText: 'View by Committee'
             },
             coalition: {
                 icon: '🤝',
@@ -562,6 +564,11 @@
                 `;
             }).join('');
 
+            const linkHtml = config.link ?
+                `<div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <a href="${config.link}" style="color: #e94560; text-decoration: none; font-weight: 600;">${config.linkText} →</a>
+                </div>` : '';
+
             container.innerHTML = `
                 <div class="stats-header">
                     <span class="stats-icon">${config.icon}</span>
@@ -587,6 +594,7 @@
                         <div class="total-label">Years</div>
                     </div>
                 </div>
+                ${linkHtml}
             `;
         }
 
