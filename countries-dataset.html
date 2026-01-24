@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countries Dataset - Election Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            color: #e94560;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #ff6b6b;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .table-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+        }
+
+        .countries-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .countries-table th {
+            background: rgba(111, 66, 193, 0.3);
+            color: #b794f6;
+            padding: 14px 10px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(111, 66, 193, 0.5);
+            white-space: nowrap;
+        }
+
+        .countries-table th:first-child {
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .countries-table td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .countries-table td:first-child {
+            text-align: left;
+            padding-left: 20px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .countries-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .countries-table .count-cell {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .countries-table .crown-cell {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        .countries-table .zero {
+            color: #555;
+            font-weight: normal;
+        }
+
+        .table-sort-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: inherit;
+            font-weight: inherit;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .table-sort-btn:hover {
+            color: #ffd700;
+        }
+
+        .sort-indicator {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .sort-indicator.active {
+            opacity: 1;
+            color: #ffd700;
+        }
+
+        .legend {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #a0a0a0;
+        }
+
+        .legend-icon {
+            font-size: 1.1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a0a0;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .countries-table {
+                font-size: 0.8rem;
+            }
+
+            .countries-table th,
+            .countries-table td {
+                padding: 10px 6px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .stats-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .legend {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="history.html" class="back-link">&larr; Back to History</a>
+
+        <header>
+            <h1>Countries Dataset</h1>
+            <p class="subtitle">Complete statistics for all countries across all years</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalCountries">0</div>
+                <div class="stat-label">Countries</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalYears">0</div>
+                <div class="stat-label">Years of History</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="doubleCrowns">0</div>
+                <div class="stat-label">Double Crowns</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="tripleCrowns">0</div>
+                <div class="stat-label">Triple Crowns</div>
+            </div>
+        </div>
+
+        <div id="tableContainer" class="table-container">
+            <table class="countries-table">
+                <thead>
+                    <tr>
+                        <th><button class="table-sort-btn" onclick="sortTable('country')">Country <span class="sort-indicator" data-col="country">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('elected')">🗳️ Elected <span class="sort-indicator" data-col="elected">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('govRule')">🏛️ Gov Rule <span class="sort-indicator" data-col="govRule">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('king')">🤴 King <span class="sort-indicator" data-col="king">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('queen')">👸 Queen <span class="sort-indicator" data-col="queen">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('opposition')">📢 Opposition <span class="sort-indicator" data-col="opposition">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('committee')">🏛️ Committees <span class="sort-indicator" data-col="committee">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('participation')">🤝 Participation <span class="sort-indicator" data-col="participation">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('doubleCrown')">👑👑 Double <span class="sort-indicator" data-col="doubleCrown">↕</span></button></th>
+                        <th><button class="table-sort-btn" onclick="sortTable('tripleCrown')">👑👑👑 Triple <span class="sort-indicator" data-col="tripleCrown">↕</span></button></th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><span class="legend-icon">🗳️</span> Elected = Times passed vote threshold</div>
+            <div class="legend-item"><span class="legend-icon">🏛️</span> Gov Rule = Prime Minister terms</div>
+            <div class="legend-item"><span class="legend-icon">🤴</span> King = Times as King</div>
+            <div class="legend-item"><span class="legend-icon">👸</span> Queen = Times as Queen</div>
+            <div class="legend-item"><span class="legend-icon">📢</span> Opposition = Opposition Leader terms</div>
+            <div class="legend-item"><span class="legend-icon">🏛️</span> Committees = Committee chairmanships</div>
+            <div class="legend-item"><span class="legend-icon">🤝</span> Participation = Years in government coalition</div>
+            <div class="legend-item"><span class="legend-icon">👑👑</span> Double Crown = PM + King same year</div>
+            <div class="legend-item"><span class="legend-icon">👑👑👑</span> Triple Crown = PM + King + Queen same year</div>
+        </div>
+    </div>
+
+    <script>
+        const HISTORY_STORAGE_KEY = 'electionCalculatorHistory';
+        let history = [];
+        let countriesData = [];
+        let currentSort = { column: 'country', direction: 'asc' };
+
+        function loadHistory() {
+            const data = localStorage.getItem(HISTORY_STORAGE_KEY);
+            if (data) {
+                history = JSON.parse(data);
+            }
+            renderTable();
+        }
+
+        function renderTable() {
+            const tableContainer = document.getElementById('tableContainer');
+            const tableBody = document.getElementById('tableBody');
+            const totalCountriesEl = document.getElementById('totalCountries');
+            const totalYearsEl = document.getElementById('totalYears');
+            const doubleCrownsEl = document.getElementById('doubleCrowns');
+            const tripleCrownsEl = document.getElementById('tripleCrowns');
+
+            if (history.length === 0) {
+                tableContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📜</div>
+                        <h2>No History Yet</h2>
+                        <p>Save governments from the Election Calculator to see country statistics.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate all country statistics
+            const countryStats = {};
+
+            history.forEach(entry => {
+                // Get PM's real country
+                const pmCountry = entry.primeMinister?.realCountry;
+
+                // Get King's real country
+                let kingCountry = entry.king?.realCountry;
+                if (!kingCountry && entry.king?.country && entry.qualifiedParties) {
+                    const kingParty = entry.qualifiedParties.find(p => p.name === entry.king.country);
+                    kingCountry = kingParty?.realCountry;
+                }
+
+                // Get Queen's real country
+                let queenCountry = entry.queen?.realCountry;
+                if (!queenCountry && entry.queen?.country && entry.qualifiedParties) {
+                    const queenParty = entry.qualifiedParties.find(p => p.name === entry.queen.country);
+                    queenCountry = queenParty?.realCountry;
+                }
+
+                // Get Opposition leader's real country
+                const oppositionCountry = entry.oppositionLeader?.realCountry;
+
+                // Initialize country stats
+                [pmCountry, kingCountry, queenCountry, oppositionCountry].forEach(country => {
+                    if (country && !countryStats[country]) {
+                        countryStats[country] = {
+                            elected: 0,
+                            govRule: 0,
+                            king: 0,
+                            queen: 0,
+                            opposition: 0,
+                            committee: 0,
+                            participation: 0,
+                            doubleCrown: 0,
+                            tripleCrown: 0
+                        };
+                    }
+                });
+
+                // Count Elected (parties that passed the threshold)
+                if (entry.qualifiedParties) {
+                    entry.qualifiedParties.forEach(party => {
+                        if (party.realCountry) {
+                            if (!countryStats[party.realCountry]) {
+                                countryStats[party.realCountry] = {
+                                    elected: 0, govRule: 0, king: 0, queen: 0, opposition: 0,
+                                    committee: 0, participation: 0, doubleCrown: 0, tripleCrown: 0
+                                };
+                            }
+                            countryStats[party.realCountry].elected++;
+                        }
+                    });
+                }
+
+                // Count Government Rule (PM)
+                if (pmCountry) {
+                    countryStats[pmCountry].govRule++;
+                }
+
+                // Count King
+                if (kingCountry) {
+                    countryStats[kingCountry].king++;
+                }
+
+                // Count Queen
+                if (queenCountry) {
+                    countryStats[queenCountry].queen++;
+                }
+
+                // Count Opposition
+                if (oppositionCountry) {
+                    countryStats[oppositionCountry].opposition++;
+                }
+
+                // Count Committee Chairs
+                if (entry.committees) {
+                    entry.committees.forEach(c => {
+                        if (entry.qualifiedParties) {
+                            const party = entry.qualifiedParties.find(p => p.name === c.partyName);
+                            if (party?.realCountry) {
+                                if (!countryStats[party.realCountry]) {
+                                    countryStats[party.realCountry] = {
+                                        elected: 0, govRule: 0, king: 0, queen: 0, opposition: 0,
+                                        committee: 0, participation: 0, doubleCrown: 0, tripleCrown: 0
+                                    };
+                                }
+                                countryStats[party.realCountry].committee++;
+                            }
+                        }
+                    });
+                }
+
+                // Count Coalition Participation (unique countries per year)
+                if (entry.coalitionParties) {
+                    const countriesInCoalition = new Set();
+                    entry.coalitionParties.forEach(cp => {
+                        let realCountry = cp.realCountry;
+                        if (!realCountry && entry.qualifiedParties) {
+                            const match = entry.qualifiedParties.find(p => p.name === cp.name);
+                            realCountry = match?.realCountry;
+                        }
+                        if (realCountry) {
+                            countriesInCoalition.add(realCountry);
+                        }
+                    });
+                    countriesInCoalition.forEach(country => {
+                        if (!countryStats[country]) {
+                            countryStats[country] = {
+                                elected: 0, govRule: 0, king: 0, queen: 0, opposition: 0,
+                                committee: 0, participation: 0, doubleCrown: 0, tripleCrown: 0
+                            };
+                        }
+                        countryStats[country].participation++;
+                    });
+                }
+
+                // Double Crown: PM + King same year same country
+                if (pmCountry && kingCountry && pmCountry === kingCountry) {
+                    countryStats[pmCountry].doubleCrown++;
+                }
+
+                // Triple Crown: PM + King + Queen same year same country
+                if (pmCountry && kingCountry && queenCountry &&
+                    pmCountry === kingCountry && pmCountry === queenCountry) {
+                    countryStats[pmCountry].tripleCrown++;
+                }
+            });
+
+            // Convert to array for sorting
+            countriesData = Object.entries(countryStats).map(([country, stats]) => ({
+                country,
+                ...stats
+            }));
+
+            // Update summary stats
+            totalCountriesEl.textContent = countriesData.length;
+            totalYearsEl.textContent = history.length;
+            doubleCrownsEl.textContent = countriesData.reduce((sum, c) => sum + c.doubleCrown, 0);
+            tripleCrownsEl.textContent = countriesData.reduce((sum, c) => sum + c.tripleCrown, 0);
+
+            // Sort and render
+            sortAndRender();
+        }
+
+        function sortAndRender() {
+            const tableBody = document.getElementById('tableBody');
+
+            // Sort data
+            countriesData.sort((a, b) => {
+                let valA = a[currentSort.column];
+                let valB = b[currentSort.column];
+
+                if (currentSort.column === 'country') {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                }
+
+                if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Update sort indicators
+            document.querySelectorAll('.sort-indicator').forEach(el => {
+                const col = el.dataset.col;
+                if (col === currentSort.column) {
+                    el.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
+                    el.classList.add('active');
+                } else {
+                    el.textContent = '↕';
+                    el.classList.remove('active');
+                }
+            });
+
+            // Render table
+            tableBody.innerHTML = countriesData.map(row => {
+                const formatCell = (val, isCrown = false) => {
+                    if (val === 0) return '<td class="count-cell zero">-</td>';
+                    return `<td class="${isCrown ? 'crown-cell' : 'count-cell'}">${val}</td>`;
+                };
+
+                return `
+                    <tr>
+                        <td>${row.country}</td>
+                        ${formatCell(row.elected)}
+                        ${formatCell(row.govRule)}
+                        ${formatCell(row.king)}
+                        ${formatCell(row.queen)}
+                        ${formatCell(row.opposition)}
+                        ${formatCell(row.committee)}
+                        ${formatCell(row.participation)}
+                        ${formatCell(row.doubleCrown, true)}
+                        ${formatCell(row.tripleCrown, true)}
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = column === 'country' ? 'asc' : 'desc';
+            }
+            sortAndRender();
+        }
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', loadHistory);
+    </script>
+</body>
+</html>
