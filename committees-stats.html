@@ -218,6 +218,73 @@
             margin-bottom: 10px;
         }
 
+        .medal-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .medal-section h2 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .medal-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .medal-table th {
+            background: rgba(111, 66, 193, 0.3);
+            color: #b794f6;
+            padding: 10px 12px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(111, 66, 193, 0.5);
+        }
+
+        .medal-table th:first-child {
+            text-align: center;
+            width: 40px;
+        }
+
+        .medal-table th:nth-child(2) {
+            text-align: left;
+        }
+
+        .medal-table td {
+            padding: 8px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .medal-table td:first-child {
+            text-align: center;
+            color: #a0a0a0;
+            font-weight: bold;
+        }
+
+        .medal-table td:nth-child(2) {
+            text-align: left;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .medal-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .medal-gold { color: #ffd700; font-weight: bold; }
+        .medal-silver { color: #c0c0c0; font-weight: bold; }
+        .medal-bronze { color: #cd7f32; font-weight: bold; }
+        .medal-total { color: #ffd700; font-weight: bold; }
+        .medal-zero { color: #444; }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -261,6 +328,23 @@
                 <div class="stat-value" id="totalChairs">0</div>
                 <div class="stat-label">Total Chairmanships</div>
             </div>
+        </div>
+
+        <div id="medalSection" class="medal-section" style="display: none;">
+            <h2>🏅 Medal Table</h2>
+            <table class="medal-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Country</th>
+                        <th>🥇</th>
+                        <th>🥈</th>
+                        <th>🥉</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="medalTableBody"></tbody>
+            </table>
         </div>
 
         <div id="committeesContent"></div>
@@ -355,6 +439,59 @@
             totalCommitteesEl.textContent = parliamentaryCommittees.length;
             totalYearsEl.textContent = history.length;
             totalChairsEl.textContent = totalChairs;
+
+            // Calculate medal table
+            const medals = {}; // { country: { gold: N, silver: N, bronze: N } }
+
+            parliamentaryCommittees.forEach(committee => {
+                const data = committeeData[committee.name];
+                const sorted = Object.entries(data.countries)
+                    .map(([name, info]) => ({ name, count: info.count }))
+                    .filter(c => c.count > 0)
+                    .sort((a, b) => b.count - a.count);
+
+                if (sorted.length === 0) return;
+
+                // Assign medals by rank (handle ties: same count = same rank)
+                let rank = 0;
+                let prevCount = -1;
+                sorted.forEach((entry, index) => {
+                    if (entry.count !== prevCount) {
+                        rank = index + 1;
+                        prevCount = entry.count;
+                    }
+                    if (rank <= 3) {
+                        if (!medals[entry.name]) medals[entry.name] = { gold: 0, silver: 0, bronze: 0 };
+                        if (rank === 1) medals[entry.name].gold++;
+                        else if (rank === 2) medals[entry.name].silver++;
+                        else if (rank === 3) medals[entry.name].bronze++;
+                    }
+                });
+            });
+
+            // Render medal table
+            const medalSection = document.getElementById('medalSection');
+            const medalBody = document.getElementById('medalTableBody');
+            const medalEntries = Object.entries(medals)
+                .map(([name, m]) => ({ name, ...m, total: m.gold + m.silver + m.bronze }))
+                .sort((a, b) => b.gold - a.gold || b.silver - a.silver || b.bronze - a.bronze);
+
+            if (medalEntries.length > 0) {
+                medalSection.style.display = 'block';
+                medalBody.innerHTML = medalEntries.map((entry, index) => {
+                    const fmt = (val, cls) => val > 0 ? `<td class="${cls}">${val}</td>` : '<td class="medal-zero">-</td>';
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${entry.name}</td>
+                            ${fmt(entry.gold, 'medal-gold')}
+                            ${fmt(entry.silver, 'medal-silver')}
+                            ${fmt(entry.bronze, 'medal-bronze')}
+                            <td class="medal-total">${entry.total}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
 
             // Render each committee
             let html = '';
