@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Court - Election Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            color: #e94560;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #ff6b6b;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        /* Bloodline Timeline */
+        .section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            text-align: center;
+        }
+
+        .section-subtitle {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Bloodline graph */
+        .bloodline-graph {
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .bloodline-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 600px;
+        }
+
+        .bloodline-table th {
+            background: rgba(111, 66, 193, 0.3);
+            color: #b794f6;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(111, 66, 193, 0.5);
+            white-space: nowrap;
+        }
+
+        .bloodline-table th:first-child {
+            text-align: center;
+            width: 60px;
+        }
+
+        .bloodline-table td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: middle;
+        }
+
+        .bloodline-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .year-cell {
+            text-align: center;
+            font-weight: bold;
+            color: #ffd700;
+            white-space: nowrap;
+        }
+
+        .royal-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .royal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .royal-name {
+            color: #ddd;
+            font-size: 0.85rem;
+        }
+
+        .royal-country {
+            color: #ffd700;
+            font-size: 0.75rem;
+        }
+
+        .dynasty-badge {
+            display: inline-block;
+            background: rgba(233, 69, 96, 0.3);
+            color: #e94560;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .same-country-marker {
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* Heritage table */
+        .heritage-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .heritage-table th {
+            background: rgba(111, 66, 193, 0.3);
+            color: #b794f6;
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(111, 66, 193, 0.5);
+        }
+
+        .heritage-table th:first-child {
+            text-align: center;
+            width: 40px;
+        }
+
+        .heritage-table th:nth-child(2) {
+            text-align: left;
+        }
+
+        .heritage-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .heritage-table td:first-child {
+            text-align: center;
+        }
+
+        .heritage-table td:nth-child(2) {
+            text-align: left;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .heritage-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .rank-position {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .rank-position.gold { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; }
+        .rank-position.silver { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #000; }
+        .rank-position.bronze { background: linear-gradient(135deg, #cd7f32, #b87333); color: #000; }
+
+        .count-cell { color: #ffd700; font-weight: bold; }
+        .count-zero { color: #444; }
+        .streak-cell { color: #e94560; font-weight: bold; }
+
+        /* Dynasties section */
+        .dynasties-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .dynasty-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 18px;
+            border-left: 4px solid;
+        }
+
+        .dynasty-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .dynasty-card-detail {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .dynasty-card-years {
+            color: #ffd700;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a0a0;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .stats-bar { flex-direction: column; align-items: center; }
+            .dynasties-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="history.html" class="back-link">&larr; Back to History</a>
+
+        <header>
+            <h1>Royal Court</h1>
+            <p class="subtitle">Bloodlines, dynasties, and world heritage of the crown</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalYears">0</div>
+                <div class="stat-label">Years of Reign</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalCountries">0</div>
+                <div class="stat-label">Royal Nations</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="longestDynasty">0</div>
+                <div class="stat-label">Longest Dynasty</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalDynasties">0</div>
+                <div class="stat-label">Dynasties (2+ yrs)</div>
+            </div>
+        </div>
+
+        <div id="content"></div>
+    </div>
+
+    <script>
+        const HISTORY_STORAGE_KEY = 'electionCalculatorHistory';
+        let history = [];
+
+        function loadHistory() {
+            const data = localStorage.getItem(HISTORY_STORAGE_KEY);
+            if (data) {
+                history = JSON.parse(data);
+            }
+            render();
+        }
+
+        function getRealCountry(entry, role) {
+            const royal = entry[role];
+            if (!royal) return null;
+            let realCountry = royal.realCountry;
+            if (!realCountry && royal.country && entry.qualifiedParties) {
+                const party = entry.qualifiedParties.find(p => p.name === royal.country);
+                realCountry = party?.realCountry;
+            }
+            return realCountry || null;
+        }
+
+        function render() {
+            const content = document.getElementById('content');
+
+            if (history.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👑</div>
+                        <h2>No Royal History Yet</h2>
+                        <p>Save governments from the Election Calculator to see royal court statistics.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build royal timeline data
+            const timeline = [];
+            history.forEach(entry => {
+                const kingCountry = getRealCountry(entry, 'king');
+                const queenCountry = getRealCountry(entry, 'queen');
+                timeline.push({
+                    year: entry.year,
+                    king: entry.king ? {
+                        name: entry.king.name,
+                        party: entry.king.country,
+                        realCountry: kingCountry,
+                        color: entry.king.color || '#888',
+                        position: entry.king.position
+                    } : null,
+                    queen: entry.queen ? {
+                        name: entry.queen.name,
+                        party: entry.queen.country,
+                        realCountry: queenCountry,
+                        color: entry.queen.color || '#888',
+                        position: entry.queen.position
+                    } : null
+                });
+            });
+
+            // Calculate dynasties (consecutive years same country holds same role)
+            const dynasties = [];
+            let currentKingDynasty = null;
+            let currentQueenDynasty = null;
+
+            timeline.forEach((entry, i) => {
+                // King dynasties
+                const kc = entry.king?.realCountry;
+                if (kc && currentKingDynasty && currentKingDynasty.country === kc) {
+                    currentKingDynasty.endYear = entry.year;
+                    currentKingDynasty.length++;
+                    currentKingDynasty.names.push(entry.king.name);
+                } else {
+                    if (currentKingDynasty && currentKingDynasty.length >= 2) {
+                        dynasties.push(currentKingDynasty);
+                    }
+                    currentKingDynasty = kc ? {
+                        role: 'King',
+                        country: kc,
+                        color: entry.king.color,
+                        startYear: entry.year,
+                        endYear: entry.year,
+                        length: 1,
+                        names: [entry.king.name]
+                    } : null;
+                }
+
+                // Queen dynasties
+                const qc = entry.queen?.realCountry;
+                if (qc && currentQueenDynasty && currentQueenDynasty.country === qc) {
+                    currentQueenDynasty.endYear = entry.year;
+                    currentQueenDynasty.length++;
+                    currentQueenDynasty.names.push(entry.queen.name);
+                } else {
+                    if (currentQueenDynasty && currentQueenDynasty.length >= 2) {
+                        dynasties.push(currentQueenDynasty);
+                    }
+                    currentQueenDynasty = qc ? {
+                        role: 'Queen',
+                        country: qc,
+                        color: entry.queen.color,
+                        startYear: entry.year,
+                        endYear: entry.year,
+                        length: 1,
+                        names: [entry.queen.name]
+                    } : null;
+                }
+            });
+            // Push final dynasties
+            if (currentKingDynasty && currentKingDynasty.length >= 2) dynasties.push(currentKingDynasty);
+            if (currentQueenDynasty && currentQueenDynasty.length >= 2) dynasties.push(currentQueenDynasty);
+
+            dynasties.sort((a, b) => b.length - a.length);
+
+            // Calculate heritage stats per country
+            const heritage = {};
+            timeline.forEach((entry, i) => {
+                const kc = entry.king?.realCountry;
+                const qc = entry.queen?.realCountry;
+                [kc, qc].forEach(c => {
+                    if (c && !heritage[c]) {
+                        heritage[c] = { king: 0, queen: 0, total: 0, kingStreak: 0, queenStreak: 0 };
+                    }
+                });
+                if (kc) { heritage[kc].king++; heritage[kc].total++; }
+                if (qc) { heritage[qc].queen++; heritage[qc].total++; }
+            });
+
+            // Calculate longest streaks per country
+            Object.keys(heritage).forEach(country => {
+                let ks = 0, maxKs = 0, qs = 0, maxQs = 0;
+                timeline.forEach(entry => {
+                    if (entry.king?.realCountry === country) { ks++; if (ks > maxKs) maxKs = ks; }
+                    else { ks = 0; }
+                    if (entry.queen?.realCountry === country) { qs++; if (qs > maxQs) maxQs = qs; }
+                    else { qs = 0; }
+                });
+                heritage[country].kingStreak = maxKs;
+                heritage[country].queenStreak = maxQs;
+            });
+
+            // Update summary stats
+            const allCountries = new Set();
+            timeline.forEach(e => {
+                if (e.king?.realCountry) allCountries.add(e.king.realCountry);
+                if (e.queen?.realCountry) allCountries.add(e.queen.realCountry);
+            });
+            const yearsWithRoyals = timeline.filter(e => e.king || e.queen).length;
+            const longestDyn = dynasties.length > 0 ? dynasties[0].length : 0;
+
+            document.getElementById('totalYears').textContent = yearsWithRoyals;
+            document.getElementById('totalCountries').textContent = allCountries.size;
+            document.getElementById('longestDynasty').textContent = longestDyn;
+            document.getElementById('totalDynasties').textContent = dynasties.length;
+
+            let html = '';
+
+            // --- Bloodline Timeline ---
+            html += `
+                <div class="section">
+                    <h2>🩸 Bloodline Timeline</h2>
+                    <p class="section-subtitle">Year-by-year succession of Kings and Queens</p>
+                    <div class="bloodline-graph">
+                        <table class="bloodline-table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th></th>
+                                    <th>King</th>
+                                    <th>Country</th>
+                                    <th></th>
+                                    <th>Queen</th>
+                                    <th>Country</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            timeline.forEach((entry, i) => {
+                const prevKingCountry = i > 0 ? timeline[i - 1].king?.realCountry : null;
+                const prevQueenCountry = i > 0 ? timeline[i - 1].queen?.realCountry : null;
+                const kingContinues = entry.king?.realCountry && entry.king.realCountry === prevKingCountry;
+                const queenContinues = entry.queen?.realCountry && entry.queen.realCountry === prevQueenCountry;
+
+                // Find dynasty length at this point
+                let kingDynLen = 0;
+                if (entry.king?.realCountry) {
+                    for (let j = i; j >= 0; j--) {
+                        if (timeline[j].king?.realCountry === entry.king.realCountry) kingDynLen++;
+                        else break;
+                    }
+                }
+                let queenDynLen = 0;
+                if (entry.queen?.realCountry) {
+                    for (let j = i; j >= 0; j--) {
+                        if (timeline[j].queen?.realCountry === entry.queen.realCountry) queenDynLen++;
+                        else break;
+                    }
+                }
+
+                html += `<tr>
+                    <td class="year-cell">${entry.year}</td>
+                    <td>${kingContinues ? `<span class="same-country-marker" style="background: ${entry.king.color};"></span>` : ''}</td>
+                    <td>
+                        ${entry.king ? `
+                            <div class="royal-cell">
+                                <span class="royal-dot" style="background: ${entry.king.color};"></span>
+                                <span class="royal-name">${entry.king.name}</span>
+                                ${kingDynLen >= 2 ? `<span class="dynasty-badge">${kingDynLen} yrs</span>` : ''}
+                            </div>
+                        ` : '<span style="color: #555;">-</span>'}
+                    </td>
+                    <td><span class="royal-country">${entry.king?.realCountry || ''}</span></td>
+                    <td>${queenContinues ? `<span class="same-country-marker" style="background: ${entry.queen.color};"></span>` : ''}</td>
+                    <td>
+                        ${entry.queen ? `
+                            <div class="royal-cell">
+                                <span class="royal-dot" style="background: ${entry.queen.color};"></span>
+                                <span class="royal-name">${entry.queen.name}</span>
+                                ${queenDynLen >= 2 ? `<span class="dynasty-badge">${queenDynLen} yrs</span>` : ''}
+                            </div>
+                        ` : '<span style="color: #555;">-</span>'}
+                    </td>
+                    <td><span class="royal-country">${entry.queen?.realCountry || ''}</span></td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div></div>';
+
+            // --- Dynasties ---
+            if (dynasties.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2>🏰 Dynasties</h2>
+                        <p class="section-subtitle">Countries that held the crown for 2 or more consecutive years</p>
+                        <div class="dynasties-grid">
+                `;
+
+                dynasties.forEach(d => {
+                    const uniqueNames = [...new Set(d.names)];
+                    html += `
+                        <div class="dynasty-card" style="border-left-color: ${d.color};">
+                            <div class="dynasty-card-title">${d.country}</div>
+                            <div class="dynasty-card-detail">${d.role === 'King' ? '🤴' : '👸'} ${d.role} dynasty</div>
+                            <div class="dynasty-card-years">Years ${d.startYear} - ${d.endYear} (${d.length} years)</div>
+                            <div class="dynasty-card-detail">Rulers: ${uniqueNames.join(', ')}</div>
+                        </div>
+                    `;
+                });
+
+                html += '</div></div>';
+            }
+
+            // --- World Heritage ---
+            const heritageSorted = Object.entries(heritage)
+                .map(([country, stats]) => ({ country, ...stats }))
+                .sort((a, b) => b.total - a.total);
+
+            html += `
+                <div class="section">
+                    <h2>🌍 World Heritage</h2>
+                    <p class="section-subtitle">All nations that have held royal positions</p>
+                    <table class="heritage-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Country</th>
+                                <th>🤴 King</th>
+                                <th>👸 Queen</th>
+                                <th>Total</th>
+                                <th>King Streak</th>
+                                <th>Queen Streak</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            heritageSorted.forEach((row, index) => {
+                let rankClass = '';
+                if (index === 0) rankClass = 'gold';
+                else if (index === 1) rankClass = 'silver';
+                else if (index === 2) rankClass = 'bronze';
+
+                const fmt = (val) => val > 0 ? `<td class="count-cell">${val}</td>` : '<td class="count-zero">-</td>';
+                const fmtStreak = (val) => val >= 2 ? `<td class="streak-cell">${val}</td>` : (val === 1 ? '<td class="count-zero">1</td>' : '<td class="count-zero">-</td>');
+
+                html += `
+                    <tr>
+                        <td><span class="rank-position ${rankClass}">${index + 1}</span></td>
+                        <td>${row.country}</td>
+                        ${fmt(row.king)}
+                        ${fmt(row.queen)}
+                        ${fmt(row.total)}
+                        ${fmtStreak(row.kingStreak)}
+                        ${fmtStreak(row.queenStreak)}
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table></div>';
+
+            content.innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadHistory);
+    </script>
+</body>
+</html>
