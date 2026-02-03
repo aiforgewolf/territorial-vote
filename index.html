@@ -2797,12 +2797,14 @@
             }
 
             // Ensure every party has at least 1 minister if possible
-            // Take from parties with 2+ ministers (largest first) and give to parties with 0
+            // Always take from the largest party (most seats) first
             let partiesWithZero = ministerAllocation.filter(p => p.ministers === 0);
 
             while (partiesWithZero.length > 0) {
-                // Find a party with 2+ ministers to take from (sorted by seats, so largest first)
-                const donorParty = ministerAllocation.find(p => p.ministers >= 2);
+                // Find the largest party (by seats) with 2+ ministers to take from
+                const donorParty = ministerAllocation
+                    .filter(p => p.ministers >= 2)
+                    .reduce((max, p) => (!max || p.seats > max.seats) ? p : max, null);
 
                 if (!donorParty) {
                     // No party has 2+ ministers, can't redistribute further
