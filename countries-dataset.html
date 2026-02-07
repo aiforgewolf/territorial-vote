@@ -125,6 +125,17 @@
             color: #fff;
         }
 
+        .countries-table td:first-child a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .countries-table td:first-child a:hover {
+            color: #b794f6;
+            text-decoration: underline;
+        }
+
         .countries-table tr:hover {
             background: rgba(255, 255, 255, 0.05);
         }
@@ -517,7 +528,7 @@
 
                 return `
                     <tr>
-                        <td>${row.country}</td>
+                        <td><a href="country-detail.html?country=${encodeURIComponent(row.country)}">${row.country}</a></td>
                         ${formatCell(row.elected)}
                         ${formatCell(row.govRule)}
                         ${formatCell(row.king)}
