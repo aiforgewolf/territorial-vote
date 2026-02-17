@@ -1984,7 +1984,7 @@
                 <div id="governmentSection" class="government-section">
                     <div class="government-header">
                         <h3>Government Composition</h3>
-                        <span style="color: #a0a0a0;">14 positions (1 Prime Minister + 13 Ministers)</span>
+                        <span style="color: #a0a0a0;">15 positions (1 Prime Minister + 14 Ministers)</span>
                     </div>
                     <div id="governmentGrid" class="government-grid"></div>
                     <div id="governmentSummary" class="government-summary"></div>
@@ -2382,7 +2382,7 @@
             const ministerTitles = [
                 'Finance', 'Foreign Affairs', 'Interior', 'Defense',
                 'Justice', 'Health', 'Education', 'Economy',
-                'Labor', 'Environment', 'Transport', 'Agriculture', 'Culture'
+                'Labor', 'Environment', 'Transport', 'Agriculture', 'Culture', 'Energy'
             ];
 
             let html = '';
@@ -2412,7 +2412,7 @@
                     const isPMParty = entry.primeMinister && m.name === entry.primeMinister.name;
                     const ministersToShow = isPMParty ? m.ministers - 1 : m.ministers;
 
-                    for (let i = 0; i < ministersToShow && ministerIndex < 13; i++) {
+                    for (let i = 0; i < ministersToShow && ministerIndex < 14; i++) {
                         html += `
                             <div class="minister-card">
                                 <div class="minister-icon" style="background: ${m.color};">🏛️</div>
@@ -2767,11 +2767,11 @@
             const sortedParties = [...coalitionParties].sort((a, b) => b.seats - a.seats);
             const totalCoalitionSeats = sortedParties.reduce((sum, p) => sum + p.seats, 0);
 
-            // Minister positions (13 ministers + 1 PM = 14 total)
+            // Minister positions (14 ministers + 1 PM = 15 total)
             const ministerTitles = [
                 'Finance', 'Foreign Affairs', 'Interior', 'Defense',
                 'Justice', 'Health', 'Education', 'Economy',
-                'Labor', 'Environment', 'Transport', 'Agriculture', 'Culture'
+                'Labor', 'Environment', 'Transport', 'Agriculture', 'Culture', 'Energy'
             ];
 
             // Allocate ministers using D'Hondt method (proportional to seats)
@@ -2780,8 +2780,8 @@
             // Prime Minister goes to biggest party
             ministerAllocation[0].ministers = 1;
 
-            // Allocate remaining 13 ministers proportionally
-            for (let i = 0; i < 13; i++) {
+            // Allocate remaining 14 ministers proportionally
+            for (let i = 0; i < 14; i++) {
                 let maxQuotient = -1;
                 let winnerIndex = 0;
 
@@ -2841,7 +2841,7 @@
                 const ministersToShow = party.id === sortedParties[0].id ? party.ministers - 1 : party.ministers;
                 const positionClass = getPositionClass(party.position || 'Middle');
 
-                for (let i = 0; i < ministersToShow && ministerIndex < 13; i++) {
+                for (let i = 0; i < ministersToShow && ministerIndex < 14; i++) {
                     gridHTML += `
                         <div class="minister-card">
                             <div class="minister-icon" style="background: ${party.color};">🏛️</div>
@@ -2872,7 +2872,7 @@
                 }
             });
 
-            const totalMinisters = 14;
+            const totalMinisters = 15;
 
             // Build summary with positions
             let summaryHTML = ministerAllocation
@@ -3523,29 +3523,49 @@
             const pmParty = coalitionParties.length > 0 ?
                 coalitionParties.reduce((a, b) => a.seats > b.seats ? a : b) : null;
 
-            // Calculate ministers distribution
+            // Calculate ministers distribution using D'Hondt method (same as live display)
             let governmentMinisters = [];
             if (coalitionParties.length > 0) {
-                const totalCoalitionSeats = coalitionParties.reduce((sum, p) => sum + p.seats, 0);
-                const ministerCount = 13;
-                let remainingMinisters = ministerCount;
+                const ministerAlloc = coalitionParties.map(p => ({
+                    name: p.name,
+                    realCountry: p.realCountry,
+                    color: p.color,
+                    seats: p.seats,
+                    ministers: 0,
+                    position: p.position
+                }));
 
-                coalitionParties.forEach(party => {
-                    const proportion = party.seats / totalCoalitionSeats;
-                    let ministers = Math.floor(proportion * ministerCount);
-                    if (ministers === 0 && coalitionParties.length <= ministerCount) {
-                        ministers = 1;
-                        remainingMinisters--;
-                    }
-                    governmentMinisters.push({
-                        name: party.name,
-                        realCountry: party.realCountry,
-                        color: party.color,
-                        seats: party.seats,
-                        ministers: ministers,
-                        position: party.position
+                // PM goes to biggest party
+                ministerAlloc.sort((a, b) => b.seats - a.seats);
+                ministerAlloc[0].ministers = 1;
+
+                // Allocate remaining 14 ministers using D'Hondt
+                for (let i = 0; i < 14; i++) {
+                    let maxQuotient = -1;
+                    let winnerIndex = 0;
+                    ministerAlloc.forEach((party, index) => {
+                        const quotient = party.seats / (party.ministers + 1);
+                        if (quotient > maxQuotient) {
+                            maxQuotient = quotient;
+                            winnerIndex = index;
+                        }
                     });
-                });
+                    ministerAlloc[winnerIndex].ministers++;
+                }
+
+                // Ensure every party has at least 1 minister if possible
+                let partiesWithZero = ministerAlloc.filter(p => p.ministers === 0);
+                while (partiesWithZero.length > 0) {
+                    const donorParty = ministerAlloc
+                        .filter(p => p.ministers >= 2)
+                        .reduce((max, p) => (!max || p.seats > max.seats) ? p : max, null);
+                    if (!donorParty) break;
+                    donorParty.ministers--;
+                    partiesWithZero[0].ministers++;
+                    partiesWithZero = ministerAlloc.filter(p => p.ministers === 0);
+                }
+
+                governmentMinisters = ministerAlloc;
             }
 
             // Get opposition leader
