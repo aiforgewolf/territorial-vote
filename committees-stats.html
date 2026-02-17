@@ -160,6 +160,17 @@
             font-size: 1rem;
         }
 
+        .country-name a, .medal-table td a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .country-name a:hover, .medal-table td a:hover {
+            color: #b794f6;
+            text-decoration: underline;
+        }
+
         .country-count {
             color: #ffd700;
             font-weight: bold;
@@ -486,7 +497,7 @@
                     return `
                         <tr>
                             <td>${index + 1}</td>
-                            <td>${entry.name}</td>
+                            <td><a href="country-detail.html?country=${encodeURIComponent(entry.name)}">${entry.name}</a></td>
                             ${fmt(entry.gold, 'medal-gold')}
                             ${fmt(entry.silver, 'medal-silver')}
                             ${fmt(entry.bronze, 'medal-bronze')}
@@ -543,7 +554,7 @@
                         html += `
                             <li>
                                 <span class="rank-position ${rankClass}">${index + 1}</span>
-                                <span class="country-name">${country.name}</span>
+                                <span class="country-name"><a href="country-detail.html?country=${encodeURIComponent(country.name)}">${country.name}</a></span>
                                 <span class="country-count">${country.count}</span>
                                 <span class="country-years">year${country.count !== 1 ? 's' : ''}</span>
                                 <div class="year-badges">
