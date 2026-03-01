@@ -437,15 +437,17 @@
             let totalAppointments = 0;
 
             history.forEach(entry => {
-                // Prime Minister
-                if (entry.primeMinister && entry.primeMinister.realCountry) {
-                    const country = entry.primeMinister.realCountry;
-                    if (!ministerData['Prime Minister'].countries[country]) {
-                        ministerData['Prime Minister'].countries[country] = { count: 0, years: [] };
-                    }
-                    ministerData['Prime Minister'].countries[country].count++;
-                    ministerData['Prime Minister'].countries[country].years.push(entry.year);
+                // Prime Minister - always count appointment, track country if available
+                if (entry.primeMinister) {
                     totalAppointments++;
+                    if (entry.primeMinister.realCountry) {
+                        const country = entry.primeMinister.realCountry;
+                        if (!ministerData['Prime Minister'].countries[country]) {
+                            ministerData['Prime Minister'].countries[country] = { count: 0, years: [] };
+                        }
+                        ministerData['Prime Minister'].countries[country].count++;
+                        ministerData['Prime Minister'].countries[country].years.push(entry.year);
+                    }
                 }
 
                 // Other ministers - need to reconstruct from governmentMinisters
@@ -464,8 +466,9 @@
 
                         for (let i = 0; i < ministersToAssign && ministerIndex < ministerTitles.length; i++) {
                             const positionName = ministerTitles[ministerIndex];
+                            totalAppointments++; // Always count the appointment
 
-                            // Only track if party has realCountry, but always advance index
+                            // Only track country if party has realCountry
                             if (m.realCountry) {
                                 const country = m.realCountry;
                                 if (!ministerData[positionName].countries[country]) {
@@ -473,7 +476,6 @@
                                 }
                                 ministerData[positionName].countries[country].count++;
                                 ministerData[positionName].countries[country].years.push(entry.year);
-                                totalAppointments++;
                             }
                             ministerIndex++;
                         }
