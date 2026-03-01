@@ -450,30 +450,31 @@
 
                 // Other ministers - need to reconstruct from governmentMinisters
                 if (entry.governmentMinisters && entry.governmentMinisters.length > 0) {
-                    // Sort ministers by seats (same as allocation order)
-                    const sortedMinisters = [...entry.governmentMinisters].sort((a, b) => b.seats - a.seats);
+                    // governmentMinisters is already sorted by seats descending when saved
+                    const sortedMinisters = entry.governmentMinisters;
 
                     // Find PM party
                     const pmPartyName = entry.primeMinister ? entry.primeMinister.name : null;
 
                     let ministerIndex = 0;
                     sortedMinisters.forEach(m => {
-                        if (!m.realCountry) return;
-
                         // Calculate how many minister positions this party has (excluding PM if same party)
                         const isPMParty = pmPartyName && m.name === pmPartyName;
                         const ministersToAssign = isPMParty ? m.ministers - 1 : m.ministers;
 
                         for (let i = 0; i < ministersToAssign && ministerIndex < ministerTitles.length; i++) {
                             const positionName = ministerTitles[ministerIndex];
-                            const country = m.realCountry;
 
-                            if (!ministerData[positionName].countries[country]) {
-                                ministerData[positionName].countries[country] = { count: 0, years: [] };
+                            // Only track if party has realCountry, but always advance index
+                            if (m.realCountry) {
+                                const country = m.realCountry;
+                                if (!ministerData[positionName].countries[country]) {
+                                    ministerData[positionName].countries[country] = { count: 0, years: [] };
+                                }
+                                ministerData[positionName].countries[country].count++;
+                                ministerData[positionName].countries[country].years.push(entry.year);
+                                totalAppointments++;
                             }
-                            ministerData[positionName].countries[country].count++;
-                            ministerData[positionName].countries[country].years.push(entry.year);
-                            totalAppointments++;
                             ministerIndex++;
                         }
                     });
