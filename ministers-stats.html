@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minister Positions Breakdown - Election Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            color: #e94560;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #ff6b6b;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .minister-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .minister-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .minister-icon {
+            font-size: 2.5rem;
+        }
+
+        .minister-title {
+            font-size: 1.4rem;
+            color: #ffd700;
+        }
+
+        .minister-total {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .country-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .country-list li {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+        }
+
+        .country-list li:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .country-list li:last-child {
+            border-bottom: none;
+        }
+
+        .rank-position {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .rank-position.gold { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; }
+        .rank-position.silver { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #000; }
+        .rank-position.bronze { background: linear-gradient(135deg, #cd7f32, #b87333); color: #000; }
+
+        .country-name {
+            flex: 1;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .country-name a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .country-name a:hover {
+            color: #b794f6;
+            text-decoration: underline;
+        }
+
+        .country-count {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1rem;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .country-years {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+            margin-left: 8px;
+            min-width: 50px;
+        }
+
+        .year-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-left: 15px;
+            max-width: 300px;
+        }
+
+        .year-badge {
+            background: rgba(111, 66, 193, 0.3);
+            color: #b794f6;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            color: #a0a0a0;
+        }
+
+        .no-data-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a0a0;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h2 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .medal-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .medal-section h2 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .medal-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .medal-table th {
+            background: rgba(111, 66, 193, 0.3);
+            color: #b794f6;
+            padding: 10px 12px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(111, 66, 193, 0.5);
+        }
+
+        .medal-table th:first-child {
+            text-align: center;
+            width: 40px;
+        }
+
+        .medal-table th:nth-child(2) {
+            text-align: left;
+        }
+
+        .medal-table td {
+            padding: 8px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .medal-table td:first-child {
+            text-align: center;
+            color: #a0a0a0;
+            font-weight: bold;
+        }
+
+        .medal-table td:nth-child(2) {
+            text-align: left;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .medal-table td a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .medal-table td a:hover {
+            color: #b794f6;
+            text-decoration: underline;
+        }
+
+        .medal-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .medal-gold { color: #ffd700; font-weight: bold; }
+        .medal-silver { color: #c0c0c0; font-weight: bold; }
+        .medal-bronze { color: #cd7f32; font-weight: bold; }
+        .medal-total { color: #ffd700; font-weight: bold; }
+        .medal-zero { color: #444; }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .minister-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .year-badges {
+                display: none;
+            }
+
+            .stats-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="country-stats.html?stat=ministers" class="back-link">&larr; Back to Minister Statistics</a>
+
+        <header>
+            <h1>Minister Positions Breakdown</h1>
+            <p class="subtitle">Which countries held each minister position</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalPositions">0</div>
+                <div class="stat-label">Minister Positions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalYears">0</div>
+                <div class="stat-label">Years of History</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalAppointments">0</div>
+                <div class="stat-label">Total Appointments</div>
+            </div>
+        </div>
+
+        <div id="medalSection" class="medal-section" style="display: none;">
+            <h2>🏅 Medal Table</h2>
+            <table class="medal-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Country</th>
+                        <th>🥇</th>
+                        <th>🥈</th>
+                        <th>🥉</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="medalTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="ministersContent"></div>
+    </div>
+
+    <script>
+        const HISTORY_STORAGE_KEY = 'electionCalculatorHistory';
+        let history = [];
+
+        const ministerPositions = [
+            { name: 'Prime Minister', icon: '👑' },
+            { name: 'Finance', icon: '💰' },
+            { name: 'Foreign Affairs', icon: '🌍' },
+            { name: 'Interior', icon: '🏠' },
+            { name: 'Defense', icon: '🛡️' },
+            { name: 'Justice', icon: '⚖️' },
+            { name: 'Health', icon: '🏥' },
+            { name: 'Education', icon: '🎓' },
+            { name: 'Economy', icon: '📈' },
+            { name: 'Labor', icon: '👷' },
+            { name: 'Environment', icon: '🌱' },
+            { name: 'Transport', icon: '🚆' },
+            { name: 'Agriculture', icon: '🌾' },
+            { name: 'Culture', icon: '🎭' },
+            { name: 'Energy', icon: '⚡' }
+        ];
+
+        const ministerTitles = [
+            'Finance', 'Foreign Affairs', 'Interior', 'Defense',
+            'Justice', 'Health', 'Education', 'Economy',
+            'Labor', 'Environment', 'Transport', 'Agriculture', 'Culture', 'Energy'
+        ];
+
+        function loadHistory() {
+            const data = localStorage.getItem(HISTORY_STORAGE_KEY);
+            if (data) {
+                history = JSON.parse(data);
+            }
+            renderMinisterBreakdown();
+        }
+
+        function renderMinisterBreakdown() {
+            const content = document.getElementById('ministersContent');
+            const totalPositionsEl = document.getElementById('totalPositions');
+            const totalYearsEl = document.getElementById('totalYears');
+            const totalAppointmentsEl = document.getElementById('totalAppointments');
+
+            if (history.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📜</div>
+                        <h2>No History Yet</h2>
+                        <p>Save governments from the Election Calculator to see minister statistics.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build minister data: for each position, which countries held it and in which years
+            const ministerData = {};
+            ministerPositions.forEach(m => {
+                ministerData[m.name] = {
+                    icon: m.icon,
+                    countries: {} // { countryName: { count: N, years: [year1, year2, ...] } }
+                };
+            });
+
+            let totalAppointments = 0;
+
+            history.forEach(entry => {
+                // Prime Minister
+                if (entry.primeMinister && entry.primeMinister.realCountry) {
+                    const country = entry.primeMinister.realCountry;
+                    if (!ministerData['Prime Minister'].countries[country]) {
+                        ministerData['Prime Minister'].countries[country] = { count: 0, years: [] };
+                    }
+                    ministerData['Prime Minister'].countries[country].count++;
+                    ministerData['Prime Minister'].countries[country].years.push(entry.year);
+                    totalAppointments++;
+                }
+
+                // Other ministers - need to reconstruct from governmentMinisters
+                if (entry.governmentMinisters && entry.governmentMinisters.length > 0) {
+                    // Sort ministers by seats (same as allocation order)
+                    const sortedMinisters = [...entry.governmentMinisters].sort((a, b) => b.seats - a.seats);
+
+                    // Find PM party
+                    const pmPartyName = entry.primeMinister ? entry.primeMinister.name : null;
+
+                    let ministerIndex = 0;
+                    sortedMinisters.forEach(m => {
+                        if (!m.realCountry) return;
+
+                        // Calculate how many minister positions this party has (excluding PM if same party)
+                        const isPMParty = pmPartyName && m.name === pmPartyName;
+                        const ministersToAssign = isPMParty ? m.ministers - 1 : m.ministers;
+
+                        for (let i = 0; i < ministersToAssign && ministerIndex < ministerTitles.length; i++) {
+                            const positionName = ministerTitles[ministerIndex];
+                            const country = m.realCountry;
+
+                            if (!ministerData[positionName].countries[country]) {
+                                ministerData[positionName].countries[country] = { count: 0, years: [] };
+                            }
+                            ministerData[positionName].countries[country].count++;
+                            ministerData[positionName].countries[country].years.push(entry.year);
+                            totalAppointments++;
+                            ministerIndex++;
+                        }
+                    });
+                }
+            });
+
+            // Update stats
+            totalPositionsEl.textContent = ministerPositions.length;
+            totalYearsEl.textContent = history.length;
+            totalAppointmentsEl.textContent = totalAppointments;
+
+            // Calculate medal table
+            const medals = {}; // { country: { gold: N, silver: N, bronze: N } }
+
+            ministerPositions.forEach(position => {
+                const data = ministerData[position.name];
+                const sorted = Object.entries(data.countries)
+                    .map(([name, info]) => ({
+                        name,
+                        count: info.count,
+                        latestYear: Math.max(...info.years)
+                    }))
+                    .filter(c => c.count > 0)
+                    // Sort by count desc, then by latest year desc (no ties)
+                    .sort((a, b) => {
+                        if (b.count !== a.count) return b.count - a.count;
+                        return b.latestYear - a.latestYear;
+                    });
+
+                if (sorted.length === 0) return;
+
+                // Assign medals by strict rank (no shared places)
+                sorted.forEach((entry, index) => {
+                    const rank = index + 1;
+                    if (rank <= 3) {
+                        if (!medals[entry.name]) medals[entry.name] = { gold: 0, silver: 0, bronze: 0 };
+                        if (rank === 1) medals[entry.name].gold++;
+                        else if (rank === 2) medals[entry.name].silver++;
+                        else if (rank === 3) medals[entry.name].bronze++;
+                    }
+                });
+            });
+
+            // Render medal table
+            const medalSection = document.getElementById('medalSection');
+            const medalBody = document.getElementById('medalTableBody');
+            const medalEntries = Object.entries(medals)
+                .map(([name, m]) => ({ name, ...m, total: m.gold + m.silver + m.bronze }))
+                .sort((a, b) => b.gold - a.gold || b.silver - a.silver || b.bronze - a.bronze);
+
+            if (medalEntries.length > 0) {
+                medalSection.style.display = 'block';
+                medalBody.innerHTML = medalEntries.map((entry, index) => {
+                    const fmt = (val, cls) => val > 0 ? `<td class="${cls}">${val}</td>` : '<td class="medal-zero">-</td>';
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td><a href="country-detail.html?country=${encodeURIComponent(entry.name)}">${entry.name}</a></td>
+                            ${fmt(entry.gold, 'medal-gold')}
+                            ${fmt(entry.silver, 'medal-silver')}
+                            ${fmt(entry.bronze, 'medal-bronze')}
+                            <td class="medal-total">${entry.total}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Render each minister position
+            let html = '';
+            ministerPositions.forEach(position => {
+                const data = ministerData[position.name];
+                const countries = Object.entries(data.countries)
+                    .map(([name, info]) => ({ name, ...info, latestYear: Math.max(...info.years) }))
+                    // Sort by count desc, then by latest year desc (no ties)
+                    .sort((a, b) => {
+                        if (b.count !== a.count) return b.count - a.count;
+                        return b.latestYear - a.latestYear;
+                    });
+
+                const totalForPosition = countries.reduce((sum, c) => sum + c.count, 0);
+
+                html += `
+                    <div class="minister-section">
+                        <div class="minister-header">
+                            <span class="minister-icon">${data.icon}</span>
+                            <div>
+                                <h2 class="minister-title">${position.name}</h2>
+                                <p class="minister-total">${totalForPosition} total appointment${totalForPosition !== 1 ? 's' : ''}</p>
+                            </div>
+                        </div>
+                `;
+
+                if (countries.length === 0) {
+                    html += `
+                        <div class="no-data">
+                            <div class="no-data-icon">📊</div>
+                            <p>No data available yet</p>
+                        </div>
+                    `;
+                } else {
+                    html += '<ul class="country-list">';
+                    countries.forEach((country, index) => {
+                        let rankClass = '';
+                        if (index === 0) rankClass = 'gold';
+                        else if (index === 1) rankClass = 'silver';
+                        else if (index === 2) rankClass = 'bronze';
+
+                        // Show years (limit to last 5 for display)
+                        const displayYears = country.years.slice(-5);
+                        const hasMore = country.years.length > 5;
+
+                        html += `
+                            <li>
+                                <span class="rank-position ${rankClass}">${index + 1}</span>
+                                <span class="country-name"><a href="country-detail.html?country=${encodeURIComponent(country.name)}">${country.name}</a></span>
+                                <span class="country-count">${country.count}</span>
+                                <span class="country-years">year${country.count !== 1 ? 's' : ''}</span>
+                                <div class="year-badges">
+                                    ${hasMore ? '<span class="year-badge">...</span>' : ''}
+                                    ${displayYears.map(y => `<span class="year-badge">${y}</span>`).join('')}
+                                </div>
+                            </li>
+                        `;
+                    });
+                    html += '</ul>';
+                }
+
+                html += '</div>';
+            });
+
+            content.innerHTML = html;
+        }
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', loadHistory);
+    </script>
+</body>
+</html>
