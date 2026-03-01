@@ -313,6 +313,12 @@
                 description: 'Countries by coalition membership (ruling or supporting)',
                 unit: 'times'
             },
+            ministers: {
+                icon: '🏛️',
+                title: 'Minister Positions',
+                description: 'Countries by number of minister positions held',
+                unit: 'positions'
+            },
             wingGovRule: {
                 icon: '🏛️',
                 title: 'Government Rule by Wing',
@@ -342,6 +348,12 @@
                 title: 'Participation by Wing',
                 description: 'Political wings by coalition membership',
                 unit: 'times'
+            },
+            wingMinisters: {
+                icon: '🏛️',
+                title: 'Ministers by Wing',
+                description: 'Political wings by number of minister positions held',
+                unit: 'positions'
             }
         };
 
@@ -433,6 +445,17 @@
                         }
                         break;
 
+                    case 'ministers':
+                        // Count minister positions by country
+                        if (entry.governmentMinisters) {
+                            entry.governmentMinisters.forEach(m => {
+                                if (m.realCountry && m.ministers > 0) {
+                                    counts[m.realCountry] = (counts[m.realCountry] || 0) + m.ministers;
+                                }
+                            });
+                        }
+                        break;
+
                     // Wing statistics
                     case 'wingGovRule':
                         if (entry.primeMinister && entry.primeMinister.position) {
@@ -497,6 +520,17 @@
                             });
                             wingsInCoalition.forEach(wing => {
                                 counts[wing] = (counts[wing] || 0) + 1;
+                            });
+                        }
+                        break;
+
+                    case 'wingMinisters':
+                        // Count minister positions by wing
+                        if (entry.governmentMinisters) {
+                            entry.governmentMinisters.forEach(m => {
+                                if (m.position && m.ministers > 0) {
+                                    counts[m.position] = (counts[m.position] || 0) + m.ministers;
+                                }
                             });
                         }
                         break;

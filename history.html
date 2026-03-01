@@ -567,6 +567,10 @@
                     <h3><a href="country-stats.html?stat=coalition" class="stat-link">🤝 Government Participation</a></h3>
                     <ul id="coalitionRanking" class="country-ranking"></ul>
                 </div>
+                <div class="country-stat-card">
+                    <h3><a href="country-stats.html?stat=ministers" class="stat-link">🏛️ Minister Positions</a></h3>
+                    <ul id="ministerRanking" class="country-ranking"></ul>
+                </div>
             </div>
         </div>
 
@@ -592,6 +596,10 @@
                 <div class="country-stat-card">
                     <h3><a href="country-stats.html?stat=wingCoalition" class="stat-link">🤝 Participation</a></h3>
                     <ul id="wingCoalitionRanking" class="country-ranking"></ul>
+                </div>
+                <div class="country-stat-card">
+                    <h3><a href="country-stats.html?stat=wingMinisters" class="stat-link">🏛️ Ministers</a></h3>
+                    <ul id="wingMinisterRanking" class="country-ranking"></ul>
                 </div>
             </div>
         </div>
@@ -859,12 +867,25 @@
                 }
             });
 
+            // Calculate minister positions by country
+            const ministerCounts = {};
+            history.forEach(entry => {
+                if (entry.governmentMinisters) {
+                    entry.governmentMinisters.forEach(m => {
+                        if (m.realCountry && m.ministers > 0) {
+                            ministerCounts[m.realCountry] = (ministerCounts[m.realCountry] || 0) + m.ministers;
+                        }
+                    });
+                }
+            });
+
             // Render rankings
             renderRanking('govRuleRanking', govRuleCounts, 'terms');
             renderRanking('royalRanking', royalCounts, 'appearances');
             renderRanking('oppositionRanking', oppositionCounts, 'terms');
             renderRanking('committeeRanking', committeeCounts, 'chairs');
             renderRanking('coalitionRanking', coalitionCounts, 'times');
+            renderRanking('ministerRanking', ministerCounts, 'positions');
 
             // Render wing statistics
             renderWingStats();
@@ -961,12 +982,25 @@
                 }
             });
 
+            // Calculate wing minister positions
+            const wingMinisterCounts = {};
+            history.forEach(entry => {
+                if (entry.governmentMinisters) {
+                    entry.governmentMinisters.forEach(m => {
+                        if (m.position && m.ministers > 0) {
+                            wingMinisterCounts[m.position] = (wingMinisterCounts[m.position] || 0) + m.ministers;
+                        }
+                    });
+                }
+            });
+
             // Render wing rankings
             renderRanking('wingGovRuleRanking', wingGovRuleCounts, 'terms');
             renderRanking('wingRoyalRanking', wingRoyalCounts, 'appearances');
             renderRanking('wingOppositionRanking', wingOppositionCounts, 'terms');
             renderRanking('wingCommitteeRanking', wingCommitteeCounts, 'chairs');
             renderRanking('wingCoalitionRanking', wingCoalitionCounts, 'times');
+            renderRanking('wingMinisterRanking', wingMinisterCounts, 'positions');
         }
 
         function renderRanking(elementId, counts, unit) {
