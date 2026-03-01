@@ -313,6 +313,51 @@
             background: rgba(220, 53, 69, 0.4);
         }
 
+        .data-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn-data-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(135deg, #219a52, #27ae60);
+            transform: translateY(-2px);
+        }
+
+        .btn-import {
+            background: linear-gradient(135deg, #3498db, #5dade2);
+            color: white;
+        }
+
+        .btn-import:hover {
+            background: linear-gradient(135deg, #2980b9, #3498db);
+            transform: translateY(-2px);
+        }
+
+        #importFileInput {
+            display: none;
+        }
+
         .btn-view-detail {
             background: rgba(111, 66, 193, 0.3);
             color: #b794f6;
@@ -540,6 +585,16 @@
                 <div class="stat-value" id="totalPMs">0</div>
                 <div class="stat-label">Prime Ministers</div>
             </div>
+        </div>
+
+        <div class="data-actions">
+            <button class="btn-data-action btn-export" onclick="exportGameState()">
+                📥 Export Save
+            </button>
+            <button class="btn-data-action btn-import" onclick="document.getElementById('importFileInput').click()">
+                📤 Import Save
+            </button>
+            <input type="file" id="importFileInput" accept=".json" onchange="importGameState(event)">
         </div>
 
         <div id="countryStatsSection" class="country-stats-section" style="display: none;">
@@ -1250,6 +1305,77 @@
             } else {
                 alert(`No entries found for country "${trimmedCountry}". Make sure you entered the exact country name.`);
             }
+        }
+
+        function exportGameState() {
+            const STORAGE_KEY = 'electionCalculatorData';
+
+            const gameState = {
+                version: 1,
+                exportDate: new Date().toISOString(),
+                history: JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]'),
+                currentData: JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+            };
+
+            const blob = new Blob([JSON.stringify(gameState, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const yearCount = gameState.history.length;
+            a.download = `election-save-${timestamp}-${yearCount}years.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importGameState(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const gameState = JSON.parse(e.target.result);
+
+                    // Validate structure
+                    if (!gameState.history || !Array.isArray(gameState.history)) {
+                        throw new Error('Invalid save file: missing history data');
+                    }
+
+                    const historyCount = gameState.history.length;
+                    const currentCount = history.length;
+
+                    const confirmMsg = currentCount > 0
+                        ? `This will replace your current ${currentCount} years of history with ${historyCount} years from the save file.\n\nAre you sure you want to continue?`
+                        : `This will import ${historyCount} years of history.\n\nContinue?`;
+
+                    if (!confirm(confirmMsg)) {
+                        event.target.value = '';
+                        return;
+                    }
+
+                    // Import data
+                    const STORAGE_KEY = 'electionCalculatorData';
+                    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(gameState.history));
+
+                    if (gameState.currentData) {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState.currentData));
+                    }
+
+                    history = gameState.history;
+                    renderHistory();
+
+                    alert(`Successfully imported ${historyCount} years of history!`);
+                } catch (err) {
+                    alert('Error importing save file: ' + err.message);
+                }
+
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
 
         // Load history on page load
