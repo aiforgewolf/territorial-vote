@@ -359,14 +359,22 @@
                 queen: 0,
                 opposition: 0,
                 committees: 0,
+                ministers: 0,
                 participation: 0,
                 doubleCrown: 0,
                 tripleCrown: 0
             };
 
+            const ministerTitles = [
+                'Finance', 'Foreign Affairs', 'Interior', 'Defense',
+                'Justice', 'Health', 'Education', 'Economy',
+                'Labor', 'Environment', 'Transport', 'Agriculture', 'Culture', 'Energy'
+            ];
+
             const yearlyData = [];
             const partyNames = new Set();
             const committeeChairs = {};
+            const ministerPositions = {};
 
             history.forEach(entry => {
                 const yearData = {
@@ -461,6 +469,33 @@
                     });
                 }
 
+                // Check Minister Positions
+                if (entry.governmentMinisters && entry.governmentMinisters.length > 0) {
+                    const pmPartyName = entry.primeMinister ? entry.primeMinister.name : null;
+                    let ministerIndex = 0;
+
+                    // PM position
+                    if (pmCountry === country) {
+                        stats.ministers++;
+                        ministerPositions['Prime Minister'] = (ministerPositions['Prime Minister'] || 0) + 1;
+                    }
+
+                    // Other minister positions
+                    entry.governmentMinisters.forEach(m => {
+                        const isPMParty = pmPartyName && m.name === pmPartyName;
+                        const ministersToAssign = isPMParty ? m.ministers - 1 : m.ministers;
+
+                        for (let i = 0; i < ministersToAssign && ministerIndex < ministerTitles.length; i++) {
+                            const positionName = ministerTitles[ministerIndex];
+                            if (m.realCountry === country) {
+                                stats.ministers++;
+                                ministerPositions[positionName] = (ministerPositions[positionName] || 0) + 1;
+                            }
+                            ministerIndex++;
+                        }
+                    });
+                }
+
                 // Check Double/Triple Crown
                 if (pmCountry === country && kingCountry === country) {
                     stats.doubleCrown++;
@@ -516,6 +551,10 @@
                         <div class="stat-label">🏛️ Committees</div>
                     </div>
                     <div class="stat-item">
+                        <div class="stat-value">${stats.ministers}</div>
+                        <div class="stat-label">🏛️ Ministers</div>
+                    </div>
+                    <div class="stat-item">
                         <div class="stat-value">${stats.participation}</div>
                         <div class="stat-label">🤝 Participation</div>
                     </div>
@@ -560,6 +599,22 @@
                         <h3>🏛️ Committee Chairs</h3>
                         <ul class="summary-list">
                             ${sortedCommittees.map(([name, count]) => `
+                                <li><span>${name}</span><span class="summary-count">${count}</span></li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Minister positions breakdown
+            if (Object.keys(ministerPositions).length > 0) {
+                const sortedMinisters = Object.entries(ministerPositions)
+                    .sort((a, b) => b[1] - a[1]);
+                html += `
+                    <div class="summary-card">
+                        <h3>🏛️ Minister Positions</h3>
+                        <ul class="summary-list">
+                            ${sortedMinisters.map(([name, count]) => `
                                 <li><span>${name}</span><span class="summary-count">${count}</span></li>
                             `).join('')}
                         </ul>
