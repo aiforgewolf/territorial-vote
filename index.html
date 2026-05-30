@@ -4030,6 +4030,15 @@
                 }
             }
 
+            // Check if entry name contains a country name (e.g., "& Bulgaria" -> Bulgaria)
+            for (const country of realCountries) {
+                const countryLower = country.name.toLowerCase();
+                const regex = new RegExp('\\b' + countryLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+                if (regex.test(nameLower)) {
+                    return country.name;
+                }
+            }
+
             // Then check if name contains any keyword
             for (const [countryName, keywords] of Object.entries(countryKeywords)) {
                 for (const keyword of keywords) {
