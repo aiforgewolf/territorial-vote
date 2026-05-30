@@ -4046,10 +4046,13 @@
 
         // Assign a real country based on GDP-weighted probability
         function assignRealCountry(entryName) {
-            // Bonbon is always Czech Republic
+            // Bonbon is always Czech Republic (if available)
             if (entryName.toLowerCase() === 'bonbon') {
-                assignedCountries.add('Czech Republic');
-                return realCountries.find(c => c.name === 'Czech Republic');
+                if (!assignedCountries.has('Czech Republic')) {
+                    assignedCountries.add('Czech Republic');
+                    return realCountries.find(c => c.name === 'Czech Republic');
+                }
+                // Czech Republic already taken, fall through to random assignment
             }
 
             // Try to match country from name
@@ -4063,9 +4066,8 @@
             const availableCountries = realCountries.filter(c => !assignedCountries.has(c.name));
 
             if (availableCountries.length === 0) {
-                // If all countries are assigned, pick random from all
-                const randomIdx = Math.floor(Math.random() * realCountries.length);
-                return realCountries[randomIdx];
+                // All countries are assigned - return null to indicate no country available
+                return null;
             }
 
             // Calculate total GDP of available countries
@@ -4162,6 +4164,11 @@
 
             // Assign a real country based on GDP-weighted probability
             const realCountry = assignRealCountry(name);
+
+            if (!realCountry) {
+                alert('All countries have been assigned. Cannot add more entries.');
+                return;
+            }
 
             // Bonbon keeps Right Wing position, others inherit from real country
             const position = name.toLowerCase() === 'bonbon' ? 'Right Wing' : realCountry.position;
@@ -4573,9 +4580,17 @@
         function addScannedEntries() {
             if (scannedEntries.length === 0) return;
 
-            scannedEntries.forEach(entry => {
+            let addedCount = 0;
+            let skippedCount = 0;
+
+            for (const entry of scannedEntries) {
                 // Assign a real country based on GDP-weighted probability
                 const realCountry = assignRealCountry(entry.name);
+
+                if (!realCountry) {
+                    skippedCount++;
+                    continue;
+                }
 
                 // Bonbon keeps Right Wing position, others inherit from real country
                 const position = entry.name.toLowerCase() === 'bonbon' ? 'Right Wing' : realCountry.position;
@@ -4587,7 +4602,12 @@
                     position: position,
                     realCountry: realCountry.name
                 });
-            });
+                addedCount++;
+            }
+
+            if (skippedCount > 0) {
+                alert(`Added ${addedCount} entries. ${skippedCount} entries were skipped (all countries already assigned).`);
+            }
 
             renderResults();
             resetScan();
