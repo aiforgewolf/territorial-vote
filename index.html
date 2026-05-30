@@ -4004,21 +4004,107 @@
                 color: partyColors[index % partyColors.length]
             }));
 
-            for (let seat = 0; seat < totalSeats; seat++) {
-                let maxQuotient = -1;
-                let winnerIndex = 0;
+            // Check if we have a previous allocation to preserve
+            const hasPreviousAllocation = currentAllocation && currentAllocation.length > 0;
 
-                results.forEach((party, index) => {
-                    const divisor = getDivisor(party.seats, allocationMethod);
-                    const quotient = party.votes / divisor;
+            if (hasPreviousAllocation) {
+                // Incremental allocation: preserve existing seats, take from biggest for new parties
+                const previousById = new Map(currentAllocation.map(p => [p.id, p.seats]));
+                const totalVotes = results.reduce((sum, p) => sum + p.votes, 0);
 
-                    if (quotient > maxQuotient) {
-                        maxQuotient = quotient;
-                        winnerIndex = index;
+                // First, assign previous seats to existing parties
+                let usedSeats = 0;
+                results.forEach(party => {
+                    if (previousById.has(party.id)) {
+                        party.seats = previousById.get(party.id);
+                        usedSeats += party.seats;
                     }
                 });
 
-                results[winnerIndex].seats++;
+                // Calculate seats for new parties based on their vote share
+                const newParties = results.filter(p => !previousById.has(p.id));
+                if (newParties.length > 0) {
+                    // Calculate how many seats new parties deserve
+                    const newPartiesVotes = newParties.reduce((sum, p) => sum + p.votes, 0);
+                    let seatsForNewParties = Math.round((newPartiesVotes / totalVotes) * totalSeats);
+
+                    // Ensure at least 1 seat per new party if they have votes
+                    seatsForNewParties = Math.max(seatsForNewParties, newParties.length);
+
+                    // Take seats from biggest parties first
+                    const existingParties = results.filter(p => previousById.has(p.id))
+                        .sort((a, b) => b.seats - a.seats);
+
+                    let seatsToTake = seatsForNewParties;
+                    for (const party of existingParties) {
+                        if (seatsToTake <= 0) break;
+                        // Don't take below 1 seat
+                        const canTake = Math.max(0, party.seats - 1);
+                        const take = Math.min(canTake, seatsToTake);
+                        party.seats -= take;
+                        seatsToTake -= take;
+                    }
+
+                    // Distribute seats to new parties using D'Hondt among them
+                    const actualNewSeats = seatsForNewParties - seatsToTake;
+                    for (let i = 0; i < actualNewSeats; i++) {
+                        let maxQuotient = -1;
+                        let winnerIndex = 0;
+                        newParties.forEach((party, index) => {
+                            const divisor = getDivisor(party.seats, allocationMethod);
+                            const quotient = party.votes / divisor;
+                            if (quotient > maxQuotient) {
+                                maxQuotient = quotient;
+                                winnerIndex = index;
+                            }
+                        });
+                        newParties[winnerIndex].seats++;
+                    }
+                }
+
+                // Ensure total seats match (adjust if needed)
+                let currentTotal = results.reduce((sum, p) => sum + p.seats, 0);
+                while (currentTotal > totalSeats) {
+                    // Remove from biggest party
+                    const sorted = results.filter(p => p.seats > 1).sort((a, b) => b.seats - a.seats);
+                    if (sorted.length > 0) {
+                        sorted[0].seats--;
+                        currentTotal--;
+                    } else break;
+                }
+                while (currentTotal < totalSeats) {
+                    // Add to party with highest quotient
+                    let maxQuotient = -1;
+                    let winnerIndex = 0;
+                    results.forEach((party, index) => {
+                        const divisor = getDivisor(party.seats, allocationMethod);
+                        const quotient = party.votes / divisor;
+                        if (quotient > maxQuotient) {
+                            maxQuotient = quotient;
+                            winnerIndex = index;
+                        }
+                    });
+                    results[winnerIndex].seats++;
+                    currentTotal++;
+                }
+            } else {
+                // Standard allocation from scratch
+                for (let seat = 0; seat < totalSeats; seat++) {
+                    let maxQuotient = -1;
+                    let winnerIndex = 0;
+
+                    results.forEach((party, index) => {
+                        const divisor = getDivisor(party.seats, allocationMethod);
+                        const quotient = party.votes / divisor;
+
+                        if (quotient > maxQuotient) {
+                            maxQuotient = quotient;
+                            winnerIndex = index;
+                        }
+                    });
+
+                    results[winnerIndex].seats++;
+                }
             }
 
             return results.sort((a, b) => b.seats - a.seats);
