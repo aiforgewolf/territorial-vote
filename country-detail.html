@@ -118,6 +118,114 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        /* ---- influence ---- */
+        .infl-headline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+
+        .infl-hero {
+            flex: 1 1 190px;
+            background: linear-gradient(135deg, rgba(111, 66, 193, 0.25), rgba(155, 89, 182, 0.12));
+            border: 1px solid rgba(155, 89, 182, 0.4);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+        .infl-hero .ih-label {
+            color: #a0a0a0;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .infl-hero .ih-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffd700;
+            line-height: 1.2;
+        }
+        .infl-hero .ih-sub { color: #b0b0c0; font-size: 0.85rem; }
+
+        .infl-mini {
+            flex: 1 1 120px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .infl-mini .im-value { font-size: 1.6rem; font-weight: 700; color: #fff; }
+        .infl-mini .im-label { color: #a0a0a0; font-size: 0.78rem; }
+
+        .podium-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+        .podium-card {
+            flex: 1 1 110px;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            border: 1px solid;
+        }
+        .podium-card .pc-value { font-size: 1.7rem; font-weight: 700; }
+        .podium-card .pc-label { font-size: 0.8rem; }
+        .podium-gold   { background: rgba(255, 215, 0, 0.12);   border-color: rgba(255, 215, 0, 0.45); }
+        .podium-gold   .pc-value, .podium-gold   .pc-label { color: #ffd700; }
+        .podium-silver { background: rgba(192, 192, 192, 0.12); border-color: rgba(192, 192, 192, 0.45); }
+        .podium-silver .pc-value, .podium-silver .pc-label { color: #d8d8d8; }
+        .podium-bronze { background: rgba(205, 127, 50, 0.12);  border-color: rgba(205, 127, 50, 0.45); }
+        .podium-bronze .pc-value, .podium-bronze .pc-label { color: #cd7f32; }
+        .podium-rise   { background: rgba(46, 204, 113, 0.12);  border-color: rgba(46, 204, 113, 0.4); }
+        .podium-rise   .pc-value, .podium-rise   .pc-label { color: #7ee2a8; }
+        .podium-fall   { background: rgba(231, 76, 60, 0.1);    border-color: rgba(231, 76, 60, 0.35); }
+        .podium-fall   .pc-value, .podium-fall   .pc-label { color: #ef9a92; }
+
+        .infl-chart { display: block; width: 100%; height: auto; margin-bottom: 8px; }
+        .infl-chart .g-line { stroke: rgba(255, 255, 255, 0.08); stroke-width: 1; }
+        .infl-chart .a-line { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
+        .infl-chart .a-text { fill: #8a8a9a; font-size: 11px; }
+
+        .infl-table-wrap { overflow-x: auto; }
+        table.infl-table { width: 100%; border-collapse: collapse; min-width: 460px; }
+        table.infl-table th {
+            text-align: left;
+            padding: 9px 12px;
+            color: #a0a0a0;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            white-space: nowrap;
+        }
+        table.infl-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        table.infl-table tr:hover { background: rgba(255, 255, 255, 0.04); }
+        table.infl-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .rank-pill {
+            display: inline-block;
+            min-width: 30px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: #d0d0d0;
+        }
+        .rank-pill.r1 { background: rgba(255, 215, 0, 0.22);   color: #ffd700; }
+        .rank-pill.r2 { background: rgba(192, 192, 192, 0.22); color: #e8e8e8; }
+        .rank-pill.r3 { background: rgba(205, 127, 50, 0.22);  color: #e0a066; }
+        .delta-up   { color: #7ee2a8; }
+        .delta-down { color: #ef9a92; }
+        .delta-flat { color: #7a7a8a; }
+        .infl-note { color: #8a8a9a; font-size: 0.85rem; margin-top: 10px; }
+        .infl-note a { color: #ffd700; }
+
         .section h2 {
             color: #ffd700;
             margin-bottom: 20px;
@@ -293,6 +401,7 @@
         <div id="content"></div>
     </div>
 
+    <script src="influence.js"></script>
     <script>
         const HISTORY_STORAGE_KEY = 'electionCalculatorHistory';
         let history = [];
@@ -319,6 +428,221 @@
                 realCountry = party?.realCountry;
             }
             return realCountry || null;
+        }
+
+        // -------------------------------------------------------------
+        // Influence
+        //
+        // Recomputed from the saved history on every load, exactly like the
+        // influence page - nothing about influence is ever stored.
+        // -------------------------------------------------------------
+
+        /**
+         * Everything this page needs about one country's influence:
+         * its value and rank each cycle, plus the derived tallies.
+         */
+        function buildInfluenceView(country) {
+            if (typeof InfluenceModel === 'undefined') return null;
+
+            const timeline = InfluenceModel.computeTimeline(history);
+            if (timeline.countries.indexOf(country) === -1) return null;
+
+            const series = timeline.series[country];
+            const earned = timeline.earned[country];
+
+            const rows = timeline.years.map((year, i) => {
+                const value = series[i];
+                // Competition ranking: one plus however many countries are
+                // strictly ahead, so ties share a place.
+                const ahead = timeline.countries
+                    .filter(c => timeline.series[c][i] > value + 1e-9).length;
+                const field = timeline.countries
+                    .filter(c => timeline.series[c][i] > 0).length;
+                const previous = i > 0 ? series[i - 1] : 0;
+
+                return {
+                    year: year,
+                    value: value,
+                    earned: earned[i],
+                    change: value - previous,
+                    rank: ahead + 1,
+                    field: field
+                };
+            });
+
+            const last = rows[rows.length - 1];
+            const peak = rows.reduce((best, r) => (r.value > best.value ? r : best), rows[0]);
+
+            return {
+                rows: rows,
+                current: last,
+                peak: peak,
+                gold:   rows.filter(r => r.rank === 1).length,
+                silver: rows.filter(r => r.rank === 2).length,
+                bronze: rows.filter(r => r.rank === 3).length,
+                gained:  rows.filter(r => r.change > 1e-9).length,
+                dropped: rows.filter(r => r.change < -1e-9).length,
+                decay: timeline.decay
+            };
+        }
+
+        /** Single-series influence chart, drawn as a plain inline SVG. */
+        function influenceChartSvg(rows) {
+            const W = 900, H = 250, L = 56, R = 16, T = 14, B = 34;
+            const plotW = W - L - R;
+            const plotH = H - T - B;
+
+            const maxValue = Math.max(...rows.map(r => r.value), 1);
+            const step = Math.pow(10, Math.floor(Math.log10(maxValue / 4)));
+            const axisStep = Math.ceil((maxValue / 4) / step) * step;
+            const axisMax = axisStep * 4;
+
+            const x = i => rows.length === 1 ? L + plotW / 2 : L + (i / (rows.length - 1)) * plotW;
+            const y = v => T + plotH - (v / axisMax) * plotH;
+
+            const parts = [];
+
+            for (let g = 0; g <= 4; g++) {
+                const value = axisStep * g;
+                const py = y(value);
+                parts.push(`<line class="g-line" x1="${L}" y1="${py}" x2="${L + plotW}" y2="${py}"/>`);
+                parts.push(`<text class="a-text" x="${L - 8}" y="${py + 4}" text-anchor="end">${Math.round(value)}</text>`);
+            }
+
+            parts.push(`<line class="a-line" x1="${L}" y1="${T}" x2="${L}" y2="${T + plotH}"/>`);
+            parts.push(`<line class="a-line" x1="${L}" y1="${T + plotH}" x2="${L + plotW}" y2="${T + plotH}"/>`);
+
+            const labelEvery = Math.max(1, Math.ceil(rows.length / 12));
+            rows.forEach((row, i) => {
+                if (i % labelEvery !== 0 && i !== rows.length - 1) return;
+                parts.push(`<text class="a-text" x="${x(i)}" y="${T + plotH + 17}" text-anchor="middle">${row.year}</text>`);
+            });
+
+            if (rows.length > 1) {
+                const line = rows.map((r, i) => `${x(i)},${y(r.value)}`).join(' L ');
+                parts.push(`<path d="M ${x(0)},${T + plotH} L ${line} L ${x(rows.length - 1)},${T + plotH} Z" fill="rgba(155,89,182,0.18)"/>`);
+                parts.push(`<path d="M ${line}" fill="none" stroke="#b06fe0" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+            }
+
+            const medalColor = { 1: '#ffd700', 2: '#d8d8d8', 3: '#cd7f32' };
+            rows.forEach((row, i) => {
+                const color = medalColor[row.rank] || '#b06fe0';
+                const radius = row.rank <= 3 ? 5 : 3.5;
+                parts.push(
+                    `<circle cx="${x(i)}" cy="${y(row.value)}" r="${radius}" fill="${color}" stroke="#1a1a2e" stroke-width="1.5">` +
+                    `<title>Year ${row.year}: ${Math.round(row.value)} influence, rank ${row.rank} of ${row.field}</title>` +
+                    `</circle>`
+                );
+            });
+
+            return `<svg class="infl-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${parts.join('')}</svg>`;
+        }
+
+        function renderInfluenceSection(country) {
+            const view = buildInfluenceView(country);
+            if (!view) return '';
+
+            const fmt = v => v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(1);
+            const ordinal = n => {
+                const suffix = (n % 100 >= 11 && n % 100 <= 13) ? 'th'
+                    : ['th', 'st', 'nd', 'rd'][n % 10] || 'th';
+                return n + suffix;
+            };
+
+            const rowsHtml = view.rows.slice().reverse().map(row => {
+                const rankClass = row.rank <= 3 ? ` r${row.rank}` : '';
+                const medal = { 1: '🥇', 2: '🥈', 3: '🥉' }[row.rank] || '';
+                let delta;
+                if (row.change > 1e-9) {
+                    delta = `<span class="delta-up">▲ ${fmt(row.change)}</span>`;
+                } else if (row.change < -1e-9) {
+                    delta = `<span class="delta-down">▼ ${fmt(Math.abs(row.change))}</span>`;
+                } else {
+                    delta = '<span class="delta-flat">—</span>';
+                }
+
+                return `
+                    <tr>
+                        <td><strong>${row.year}</strong></td>
+                        <td><span class="rank-pill${rankClass}">${row.rank}</span> ${medal}
+                            <span style="color:#7a7a8a;font-size:0.8rem;">of ${row.field}</span></td>
+                        <td class="num"><strong>${fmt(row.value)}</strong></td>
+                        <td class="num">${delta}</td>
+                        <td class="num" style="color:#9be89b;">${row.earned > 0 ? '+' + fmt(row.earned) : '—'}</td>
+                    </tr>`;
+            }).join('');
+
+            return `
+                <div class="section">
+                    <h2>📈 Influence</h2>
+
+                    <div class="infl-headline">
+                        <div class="infl-hero">
+                            <div class="ih-label">Current influence</div>
+                            <div class="ih-value">${fmt(view.current.value)}</div>
+                            <div class="ih-sub">as of year ${view.current.year}</div>
+                        </div>
+                        <div class="infl-hero">
+                            <div class="ih-label">Current position</div>
+                            <div class="ih-value">${ordinal(view.current.rank)}</div>
+                            <div class="ih-sub">of ${view.current.field} countries</div>
+                        </div>
+                        <div class="infl-mini">
+                            <div class="im-value">${fmt(view.peak.value)}</div>
+                            <div class="im-label">Peak (year ${view.peak.year})</div>
+                        </div>
+                        <div class="infl-mini">
+                            <div class="im-value">${view.rows.length}</div>
+                            <div class="im-label">Cycles tracked</div>
+                        </div>
+                    </div>
+
+                    <div class="podium-row">
+                        <div class="podium-card podium-gold">
+                            <div class="pc-value">${view.gold}</div>
+                            <div class="pc-label">🥇 Years 1st</div>
+                        </div>
+                        <div class="podium-card podium-silver">
+                            <div class="pc-value">${view.silver}</div>
+                            <div class="pc-label">🥈 Years 2nd</div>
+                        </div>
+                        <div class="podium-card podium-bronze">
+                            <div class="pc-value">${view.bronze}</div>
+                            <div class="pc-label">🥉 Years 3rd</div>
+                        </div>
+                        <div class="podium-card podium-rise">
+                            <div class="pc-value">${view.gained}</div>
+                            <div class="pc-label">▲ Years gained</div>
+                        </div>
+                        <div class="podium-card podium-fall">
+                            <div class="pc-value">${view.dropped}</div>
+                            <div class="pc-label">▼ Years lost</div>
+                        </div>
+                    </div>
+
+                    ${influenceChartSvg(view.rows)}
+
+                    <div class="infl-table-wrap">
+                        <table class="infl-table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Rank</th>
+                                    <th class="num">Influence</th>
+                                    <th class="num">Change</th>
+                                    <th class="num">Earned</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+
+                    <p class="infl-note">
+                        Influence is recalculated from the saved history, never stored. Points are earned for
+                        the roles held each cycle and fade by ×${view.decay} per cycle thereafter.
+                        <a href="influence.html">See the full model and weights →</a>
+                    </p>
+                </div>`;
         }
 
         function render() {
@@ -637,6 +961,9 @@
             }
 
             html += '</div></div>';
+
+            // Influence section
+            html += renderInfluenceSection(country);
 
             // Timeline section
             html += `
