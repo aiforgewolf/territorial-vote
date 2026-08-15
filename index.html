@@ -2149,6 +2149,7 @@
             { name: 'Morocco', gdp: 140, position: 'Middle' },
             { name: 'Ethiopia', gdp: 130, position: 'Left Wing' },
             { name: 'Ecuador', gdp: 120, position: 'Left Wing' },
+            { name: 'Uzbekistan', gdp: 80, position: 'Middle' },
             { name: 'Slovakia', gdp: 115, position: 'Right Wing' },
             { name: 'Dominican Republic', gdp: 110, position: 'Middle' },
             { name: 'Kenya', gdp: 105, position: 'Middle' },
@@ -4189,7 +4190,7 @@
             'Indonesia': ['indonesian', 'indonesia', 'jakarta', 'surabaya', 'bandung', 'medan', 'semarang', 'makassar', 'palembang', 'tangerang', 'depok', 'java', 'sumatra', 'borneo', 'sulawesi', 'bali', 'balinese'],
             'Netherlands': ['dutch', 'netherlands', 'holland', 'amsterdam', 'rotterdam', 'hague', 'utrecht', 'eindhoven', 'tilburg', 'groningen', 'almere', 'breda', 'nijmegen', 'frisian', 'friesland', 'batavian', 'flemish'],
             'Saudi Arabia': ['saudi', 'arabian', 'arabia', 'riyadh', 'jeddah', 'mecca', 'medina', 'dammam', 'taif', 'tabuk', 'buraidah', 'khamis mushait'],
-            'Turkey': ['turkish', 'turkey', 'ankara', 'istanbul', 'izmir', 'bursa', 'antalya', 'adana', 'konya', 'gaziantep', 'mersin', 'diyarbakir', 'kayseri', 'eskisehir', 'anatolia', 'anatolian', 'ottoman', 'turk'],
+            'Turkey': ['turkish', 'turkey', 'ankara', 'istanbul', 'izmir', 'bursa', 'antalya', 'adana', 'konya', 'gaziantep', 'mersin', 'diyarbakir', 'kayseri', 'eskisehir', 'anatolia', 'anatolian', 'ottoman', 'osmanlı', 'osmanli', 'turk'],
             'Switzerland': ['swiss', 'switzerland', 'zurich', 'geneva', 'basel', 'lausanne', 'bern', 'winterthur', 'lucerne', 'st gallen', 'lugano', 'biel', 'thun', 'helvetic', 'helvetia'],
             'Poland': ['polish', 'poland', 'warsaw', 'krakow', 'lodz', 'wroclaw', 'poznan', 'gdansk', 'szczecin', 'bydgoszcz', 'lublin', 'katowice', 'bialystok', 'gdynia', 'silesia', 'silesian', 'pomerania', 'pomeranian', 'masovia', 'galicia polish', 'wielkopolska', 'malopolska', 'mazovia', 'mazovian'],
             'Taiwan': ['taiwanese', 'taiwan', 'taipei', 'kaohsiung', 'taichung', 'tainan', 'hsinchu', 'keelung', 'chiayi', 'changhua', 'formosa', 'formosan'],
@@ -4212,7 +4213,7 @@
             'Pakistan': ['pakistani', 'pakistan', 'karachi', 'lahore', 'faisalabad', 'rawalpindi', 'gujranwala', 'peshawar', 'multan', 'hyderabad', 'islamabad', 'quetta', 'sindh', 'punjabi', 'baloch', 'balochistan', 'pashtun'],
             'Czech Republic': ['czech', 'czechia', 'prague', 'brno', 'ostrava', 'plzen', 'liberec', 'olomouc', 'ceske budejovice', 'hradec kralove', 'pardubice', 'usti nad labem', 'bohemia', 'bohemian', 'moravia', 'moravian', 'bonbon'],
             'Chile': ['chilean', 'chile', 'santiago', 'valparaiso', 'concepcion', 'la serena', 'antofagasta', 'temuco', 'rancagua', 'talca', 'arica', 'chillan', 'iquique', 'patagonia chilean'],
-            'Finland': ['finnish', 'finland', 'helsinki', 'espoo', 'tampere', 'vantaa', 'oulu', 'turku', 'jyvaskyla', 'lahti', 'kuopio', 'pori', 'kouvola', 'suomi', 'finn', 'nordic', 'lapland'],
+            'Finland': ['finnish', 'finland', 'helsinki', 'espoo', 'tampere', 'vantaa', 'oulu', 'turku', 'jyvaskyla', 'lahti', 'kuopio', 'pori', 'kouvola', 'suomi', 'finn', 'nordic', 'lapland', 'fin'],
             'Colombia': ['colombian', 'colombia', 'bogota', 'medellin', 'cali', 'barranquilla', 'cartagena', 'cucuta', 'bucaramanga', 'pereira', 'santa marta', 'ibague', 'colombiano', 'colombiana'],
             'Romania': ['romanian', 'romania', 'bucharest', 'cluj-napoca', 'timisoara', 'iasi', 'constanta', 'craiova', 'brasov', 'galati', 'ploiesti', 'oradea', 'braila', 'transylvania', 'transylvanian', 'wallachia', 'wallachian', 'moldavia'],
             'Portugal': ['portuguese', 'portugal', 'lisbon', 'porto', 'amadora', 'braga', 'setubal', 'coimbra', 'funchal', 'almada', 'agualva-cacem', 'queluz', 'leiria', 'algarve', 'azores', 'madeira', 'lisboa', 'portugues', 'portuguesa', 'lusitania', 'lusitanian'],
@@ -4223,16 +4224,135 @@
             'Ukraine': ['ukrainian', 'ukraine', 'kyiv', 'kiev', 'kharkiv', 'odessa', 'dnipro', 'donetsk', 'zaporizhzhia', 'lviv', 'kryvyi rih', 'mykolaiv', 'mariupol', 'luhansk', 'crimea', 'crimean', 'galicia ukrainian'],
             'Cuba': ['cuban', 'cuba', 'havana', 'santiago de cuba', 'camaguey', 'holguin', 'guantanamo', 'santa clara', 'las tunas', 'bayamo', 'cienfuegos', 'pinar del rio', 'matanzas', 'ciego de avila'],
             'North Korea': ['north korean', 'north korea', 'pyongyang', 'hamhung', 'chongjin', 'nampo', 'wonsan', 'sinuiju', 'tanchon', 'kaechon', 'sariwon', 'kaesong', 'dprk', 'juche'],
-            'Slovakia': ['slovak', 'slovakia', 'bratislava', 'kosice', 'presov', 'zilina', 'nitra', 'banska bystrica', 'trnava', 'trencin', 'martin', 'poprad', 'prievidza', 'zvolen']
+            'Slovakia': ['slovak', 'slovakia', 'bratislava', 'kosice', 'presov', 'zilina', 'nitra', 'banska bystrica', 'trnava', 'trencin', 'martin', 'poprad', 'prievidza', 'zvolen'],
+            'Uzbekistan': ['uzbek', 'uzbekistan', 'tashkent', 'samarkand', 'bukhara', 'namangan', 'andijan', 'nukus', 'fergana', 'karshi', 'kokand', 'margilan', 'navoi'],
+            'Nigeria': ['nigerian', 'nigeria', 'lagos', 'abuja', 'kano', 'ibadan', 'port harcourt', 'benin city', 'maiduguri', 'zaria', 'aba', 'jos', 'ilorin', 'oyo', 'enugu', 'abeokuta', 'sokoto', 'yoruba', 'igbo', 'hausa'],
+            'Egypt': ['egyptian', 'egypt', 'cairo', 'alexandria', 'giza', 'shubra', 'port said', 'suez', 'luxor', 'aswan', 'pharaoh', 'pharaonic', 'nile', 'sinai', 'misr'],
+            'Iran': ['iranian', 'iran', 'tehran', 'isfahan', 'mashhad', 'karaj', 'tabriz', 'shiraz', 'ahvaz', 'qom', 'kermanshah', 'urmia', 'rasht', 'persian', 'persia'],
+            'Bangladesh': ['bangladeshi', 'bangladesh', 'dhaka', 'chittagong', 'khulna', 'rajshahi', 'sylhet', 'rangpur', 'comilla', 'gazipur', 'bengali'],
+            'Sri Lanka': ['sri lankan', 'sri lanka', 'colombo', 'kandy', 'galle', 'jaffna', 'negombo', 'ceylon', 'sinhalese', 'tamil lankan'],
+            'Bulgaria': ['bulgarian', 'bulgaria', 'sofia', 'plovdiv', 'varna', 'burgas', 'ruse', 'stara zagora', 'pleven', 'sliven', 'dobrich', 'shumen', 'thracian', 'thrace'],
+            'Croatia': ['croatian', 'croatia', 'zagreb', 'split', 'rijeka', 'osijek', 'zadar', 'slavonski brod', 'pula', 'karlovac', 'sisak', 'varazdin', 'dubrovnik', 'dalmatia', 'dalmatian', 'hrvatska'],
+            'Serbia': ['serbian', 'serbia', 'belgrade', 'novi sad', 'nis', 'kragujevac', 'subotica', 'zrenjanin', 'pancevo', 'cacak', 'kraljevo', 'vojvodina', 'srpski'],
+            'Ecuador': ['ecuadorian', 'ecuador', 'quito', 'guayaquil', 'cuenca', 'santo domingo', 'machala', 'manta', 'portoviejo', 'ambato', 'riobamba', 'galapagos'],
+            'Morocco': ['moroccan', 'morocco', 'casablanca', 'rabat', 'fez', 'marrakech', 'tangier', 'meknes', 'oujda', 'kenitra', 'agadir', 'tetouan', 'maghreb'],
+            'Kenya': ['kenyan', 'kenya', 'nairobi', 'mombasa', 'kisumu', 'nakuru', 'eldoret', 'thika', 'malindi', 'kitale', 'machakos'],
+            'Algeria': ['algerian', 'algeria', 'algiers', 'oran', 'constantine', 'annaba', 'blida', 'batna', 'djelfa', 'setif', 'sidi bel abbes'],
+            'Qatar': ['qatari', 'qatar', 'doha', 'al wakrah', 'al khor', 'al rayyan', 'umm salal'],
+            'Kuwait': ['kuwaiti', 'kuwait', 'kuwait city', 'hawalli', 'salmiya', 'jahra'],
+            'Ethiopia': ['ethiopian', 'ethiopia', 'addis ababa', 'dire dawa', 'mekelle', 'gondar', 'hawassa', 'bahir dar', 'adama', 'jimma', 'abyssinia', 'abyssinian'],
+            'Venezuela': ['venezuelan', 'venezuela', 'caracas', 'maracaibo', 'valencia', 'barquisimeto', 'maracay', 'ciudad guayana', 'bolivarian'],
+            'Angola': ['angolan', 'angola', 'luanda', 'huambo', 'lobito', 'benguela', 'lucapa', 'kuito', 'malanje', 'namibe'],
+            'Kazakhstan': ['kazakh', 'kazakhstan', 'almaty', 'astana', 'nur-sultan', 'shymkent', 'karaganda', 'aktobe', 'taraz', 'pavlodar', 'oskemen'],
+            'Iraq': ['iraqi', 'iraq', 'baghdad', 'basra', 'mosul', 'erbil', 'sulaymaniyah', 'najaf', 'karbala', 'kirkuk', 'nasiriyah', 'mesopotamia', 'mesopotamian'],
+            'Bolivia': ['bolivian', 'bolivia', 'la paz', 'santa cruz', 'cochabamba', 'sucre', 'oruro', 'tarija', 'potosi'],
+            'Panama': ['panamanian', 'panama', 'panama city', 'colon', 'david', 'santiago panama'],
+            'Uruguay': ['uruguayan', 'uruguay', 'montevideo', 'salto', 'ciudad de la costa', 'paysandu'],
+            'Ghana': ['ghanaian', 'ghana', 'accra', 'kumasi', 'tamale', 'sekondi-takoradi', 'cape coast', 'ashanti'],
+            'Tanzania': ['tanzanian', 'tanzania', 'dar es salaam', 'dodoma', 'mwanza', 'arusha', 'zanzibar', 'mbeya', 'kilimanjaro'],
+            'Georgia': ['georgian', 'georgia caucasus', 'tbilisi', 'kutaisi', 'batumi', 'rustavi', 'zugdidi', 'gori', 'kartvelian', 'sakartvelo'],
+            'Jordan': ['jordanian', 'jordan', 'amman', 'zarqa', 'irbid', 'aqaba', 'madaba', 'salt', 'hashemite'],
+            'Tunisia': ['tunisian', 'tunisia', 'tunis', 'sfax', 'sousse', 'kairouan', 'bizerte', 'gabes', 'carthage'],
+            'Azerbaijan': ['azerbaijani', 'azerbaijan', 'baku', 'ganja', 'sumqayit', 'mingachevir', 'shirvan', 'azeri'],
+            'Belarus': ['belarusian', 'belarus', 'minsk', 'gomel', 'mogilev', 'vitebsk', 'grodno', 'brest', 'belarussian'],
+            'Lithuania': ['lithuanian', 'lithuania', 'vilnius', 'kaunas', 'klaipeda', 'siauliai', 'panevezys'],
+            'Latvia': ['latvian', 'latvia', 'riga', 'daugavpils', 'liepaja', 'jelgava', 'jurmala'],
+            'Estonia': ['estonian', 'estonia', 'tallinn', 'tartu', 'narva', 'parnu', 'kohtla-jarve'],
+            'Slovenia': ['slovenian', 'slovenia', 'ljubljana', 'maribor', 'celje', 'kranj', 'koper'],
+            'Costa Rica': ['costa rican', 'costa rica', 'san jose costa rica', 'alajuela', 'cartago', 'heredia'],
+            'Albania': ['albanian', 'albania', 'tirana', 'durres', 'vlore', 'elbasan', 'shkoder', 'korce', 'illyria', 'illyrian'],
+            'Nepal': ['nepalese', 'nepali', 'nepal', 'kathmandu', 'pokhara', 'lalitpur', 'bharatpur', 'biratnagar', 'himalayan'],
+            'Cambodia': ['cambodian', 'cambodia', 'phnom penh', 'siem reap', 'battambang', 'angkor', 'khmer'],
+            'Iceland': ['icelandic', 'iceland', 'reykjavik', 'akureyri', 'hafnarfjordur', 'keflavik'],
+            'Cyprus': ['cypriot', 'cyprus', 'nicosia', 'limassol', 'larnaca', 'paphos', 'famagusta'],
+            'Luxembourg': ['luxembourgish', 'luxembourg', 'esch-sur-alzette', 'differdange', 'dudelange'],
+            'Dominican Republic': ['dominican', 'dominican republic', 'santo domingo', 'santiago de los caballeros', 'la romana', 'san pedro de macoris'],
+            'Jamaica': ['jamaican', 'jamaica', 'kingston', 'montego bay', 'spanish town'],
+            'Mongolia': ['mongolian', 'mongolia', 'ulaanbaatar', 'erdenet', 'darkhan', 'genghis', 'chinggis', 'mongol'],
+            'Myanmar': ['burmese', 'myanmar', 'burma', 'yangon', 'rangoon', 'mandalay', 'naypyidaw', 'mawlamyine'],
+            'Moldova': ['moldovan', 'moldova', 'chisinau', 'tiraspol', 'balti', 'bender'],
+            'Libya': ['libyan', 'libya', 'tripoli', 'benghazi', 'misrata', 'zliten', 'bayda'],
+            'Lebanon': ['lebanese', 'lebanon', 'beirut', 'tripoli lebanon', 'sidon', 'tyre', 'phoenicia', 'phoenician'],
+            'Afghanistan': ['afghan', 'afghanistan', 'kabul', 'kandahar', 'herat', 'mazar-i-sharif', 'jalalabad'],
+            'Cameroon': ['cameroonian', 'cameroon', 'douala', 'yaounde', 'garoua', 'bamenda', 'maroua', 'bafoussam'],
+            'Ivory Coast': ['ivorian', 'ivory coast', 'cote d\'ivoire', 'abidjan', 'yamoussoukro', 'bouake', 'daloa', 'san pedro'],
+            'Oman': ['omani', 'oman', 'muscat', 'salalah', 'sohar', 'nizwa', 'sur'],
+            'Bahrain': ['bahraini', 'bahrain', 'manama', 'muharraq', 'riffa', 'hamad town'],
+            'Guatemala': ['guatemalan', 'guatemala', 'guatemala city', 'mixco', 'villa nueva', 'quetzaltenango'],
+            'Honduras': ['honduran', 'honduras', 'tegucigalpa', 'san pedro sula', 'choloma', 'la ceiba'],
+            'El Salvador': ['salvadoran', 'el salvador', 'san salvador', 'santa ana', 'san miguel', 'mejicanos'],
+            'Paraguay': ['paraguayan', 'paraguay', 'asuncion', 'ciudad del este', 'san lorenzo', 'luque'],
+            'Uganda': ['ugandan', 'uganda', 'kampala', 'gulu', 'lira', 'mbarara', 'jinja', 'entebbe'],
+            'Zimbabwe': ['zimbabwean', 'zimbabwe', 'harare', 'bulawayo', 'chitungwiza', 'mutare', 'gweru'],
+            'Senegal': ['senegalese', 'senegal', 'dakar', 'touba', 'thies', 'rufisque', 'kaolack'],
+            'Zambia': ['zambian', 'zambia', 'lusaka', 'kitwe', 'ndola', 'kabwe', 'livingstone'],
+            'Syria': ['syrian', 'syria', 'damascus', 'aleppo', 'homs', 'latakia', 'hama', 'deir ez-zor'],
+            'Yemen': ['yemeni', 'yemen', 'sanaa', 'aden', 'taiz', 'hodeidah', 'mukalla'],
+            'Somalia': ['somali', 'somalia', 'mogadishu', 'hargeisa', 'berbera', 'bosaso', 'somaliland'],
+            'Sudan': ['sudanese', 'sudan', 'khartoum', 'omdurman', 'port sudan', 'kassala', 'el obeid'],
+            'Rwanda': ['rwandan', 'rwanda', 'kigali', 'butare', 'gitarama', 'ruhengeri'],
+            'Haiti': ['haitian', 'haiti', 'port-au-prince', 'cap-haitien', 'gonaives'],
+            'Cuba': ['cuban', 'cuba', 'havana', 'santiago de cuba', 'camaguey', 'holguin', 'guantanamo', 'santa clara', 'fidel', 'che']
         };
+
+        // Flag emoji to ISO 2-letter code mapping
+        const flagEmojiToCountry = {
+            'GR': 'Greece', 'EG': 'Egypt', 'FI': 'Finland', 'US': 'United States', 'GB': 'United Kingdom',
+            'FR': 'France', 'DE': 'Germany', 'IT': 'Italy', 'ES': 'Spain', 'PT': 'Portugal',
+            'NL': 'Netherlands', 'BE': 'Belgium', 'AT': 'Austria', 'CH': 'Switzerland', 'SE': 'Sweden',
+            'NO': 'Norway', 'DK': 'Denmark', 'PL': 'Poland', 'CZ': 'Czech Republic', 'SK': 'Slovakia',
+            'HU': 'Hungary', 'RO': 'Romania', 'BG': 'Bulgaria', 'HR': 'Croatia', 'RS': 'Serbia',
+            'SI': 'Slovenia', 'EE': 'Estonia', 'LV': 'Latvia', 'LT': 'Lithuania', 'IE': 'Ireland',
+            'IS': 'Iceland', 'LU': 'Luxembourg', 'MT': 'Malta', 'CY': 'Cyprus', 'AL': 'Albania',
+            'MK': 'North Macedonia', 'ME': 'Montenegro', 'BA': 'Bosnia and Herzegovina', 'XK': 'Kosovo',
+            'MD': 'Moldova', 'UA': 'Ukraine', 'BY': 'Belarus', 'RU': 'Russia', 'GE': 'Georgia',
+            'AM': 'Armenia', 'AZ': 'Azerbaijan', 'TR': 'Turkey', 'IL': 'Israel', 'SA': 'Saudi Arabia',
+            'AE': 'United Arab Emirates', 'QA': 'Qatar', 'KW': 'Kuwait', 'BH': 'Bahrain', 'OM': 'Oman',
+            'JO': 'Jordan', 'LB': 'Lebanon', 'SY': 'Syria', 'IQ': 'Iraq', 'IR': 'Iran', 'YE': 'Yemen',
+            'AF': 'Afghanistan', 'PK': 'Pakistan', 'IN': 'India', 'BD': 'Bangladesh', 'LK': 'Sri Lanka',
+            'NP': 'Nepal', 'BT': 'Bhutan', 'MM': 'Myanmar', 'TH': 'Thailand', 'VN': 'Vietnam',
+            'KH': 'Cambodia', 'LA': 'Laos', 'MY': 'Malaysia', 'SG': 'Singapore', 'ID': 'Indonesia',
+            'PH': 'Philippines', 'TW': 'Taiwan', 'KR': 'South Korea', 'KP': 'North Korea', 'JP': 'Japan',
+            'CN': 'China', 'MN': 'Mongolia', 'KZ': 'Kazakhstan', 'UZ': 'Uzbekistan', 'TM': 'Turkmenistan',
+            'KG': 'Kyrgyzstan', 'TJ': 'Tajikistan', 'AU': 'Australia', 'NZ': 'New Zealand',
+            'CA': 'Canada', 'MX': 'Mexico', 'BR': 'Brazil', 'AR': 'Argentina', 'CL': 'Chile',
+            'CO': 'Colombia', 'PE': 'Peru', 'VE': 'Venezuela', 'EC': 'Ecuador', 'BO': 'Bolivia',
+            'PY': 'Paraguay', 'UY': 'Uruguay', 'PA': 'Panama', 'CR': 'Costa Rica', 'CU': 'Cuba',
+            'DO': 'Dominican Republic', 'JM': 'Jamaica', 'HT': 'Haiti', 'GT': 'Guatemala',
+            'HN': 'Honduras', 'SV': 'El Salvador', 'NI': 'Nicaragua', 'TT': 'Trinidad and Tobago',
+            'ZA': 'South Africa', 'NG': 'Nigeria', 'KE': 'Kenya', 'ET': 'Ethiopia', 'GH': 'Ghana',
+            'TZ': 'Tanzania', 'UG': 'Uganda', 'CM': 'Cameroon', 'CI': 'Ivory Coast', 'SN': 'Senegal',
+            'DZ': 'Algeria', 'MA': 'Morocco', 'TN': 'Tunisia', 'LY': 'Libya', 'SD': 'Sudan',
+            'AO': 'Angola', 'MZ': 'Mozambique', 'ZW': 'Zimbabwe', 'ZM': 'Zambia', 'BW': 'Botswana',
+            'NA': 'Namibia', 'RW': 'Rwanda', 'SO': 'Somalia', 'HK': 'Hong Kong', 'MO': 'Macau',
+            'PS': 'Palestine', 'PR': 'Puerto Rico'
+        };
+
+        function extractFlagEmojis(text) {
+            const flags = [];
+            const flagRegex = /[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/g;
+            let match;
+            while ((match = flagRegex.exec(text)) !== null) {
+                const codePoints = [...match[0]];
+                const letter1 = String.fromCharCode(codePoints[0].codePointAt(0) - 0x1F1E6 + 65);
+                const letter2 = String.fromCharCode(codePoints[1].codePointAt(0) - 0x1F1E6 + 65);
+                const isoCode = letter1 + letter2;
+                if (flagEmojiToCountry[isoCode]) {
+                    flags.push(flagEmojiToCountry[isoCode]);
+                }
+            }
+            return flags;
+        }
 
         // Function to find matching country from entry name
         function findCountryMatch(entryName) {
             const nameLower = entryName.toLowerCase();
+            // Strip emojis/special chars for text matching
+            const nameClean = nameLower.replace(/[^\w\s'-]/g, '').trim();
 
             // First check for exact country name match
             for (const country of realCountries) {
-                if (nameLower === country.name.toLowerCase()) {
+                if (nameClean === country.name.toLowerCase()) {
                     return country.name;
                 }
             }
@@ -4241,20 +4361,25 @@
             for (const country of realCountries) {
                 const countryLower = country.name.toLowerCase();
                 const regex = new RegExp('\\b' + countryLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-                if (regex.test(nameLower)) {
+                if (regex.test(nameClean)) {
                     return country.name;
                 }
             }
 
-            // Then check if name contains any keyword
+            // Check keyword matching on cleaned name
             for (const [countryName, keywords] of Object.entries(countryKeywords)) {
                 for (const keyword of keywords) {
-                    // Use word boundary matching to avoid false positives
                     const regex = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-                    if (regex.test(nameLower)) {
+                    if (regex.test(nameClean)) {
                         return countryName;
                     }
                 }
+            }
+
+            // Check flag emojis in name
+            const flagCountries = extractFlagEmojis(entryName);
+            if (flagCountries.length > 0) {
+                return flagCountries[0];
             }
 
             return null;
