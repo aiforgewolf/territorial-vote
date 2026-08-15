@@ -2079,6 +2079,11 @@
         let royalsVoted = false;
         let savedKing = null;
         let savedQueen = null;
+        // The party objects actually selected as royals for the current roll.
+        // Kept so the vote/save path never has to re-find a party by display
+        // name - names are not unique, so a name lookup can return a different
+        // party (and therefore the wrong real country).
+        let currentRoyalCandidates = { king: null, queen: null };
 
         // Party colors for visualization
         const partyColors = [
@@ -3554,6 +3559,33 @@
             const kingName = getRandomRoyalName(true);
             const queenName = getRandomRoyalName(false);
 
+            // Remember exactly which parties were crowned, so voting/saving
+            // uses these objects instead of looking parties up by name
+            currentRoyalCandidates = {
+                king: {
+                    partyId: kingSelection.party.id,
+                    name: kingName,
+                    country: kingSelection.party.name,
+                    realCountry: kingSelection.party.realCountry || null,
+                    color: kingSelection.party.color,
+                    chance: kingSelection.percentage.toFixed(1),
+                    position: kingSelection.party.position || 'Unknown',
+                    isQualified: kingSelection.party.isQualified,
+                    inGovernment: kingSelection.party.inGovernment
+                },
+                queen: {
+                    partyId: queenSelection.party.id,
+                    name: queenName,
+                    country: queenSelection.party.name,
+                    realCountry: queenSelection.party.realCountry || null,
+                    color: queenSelection.party.color,
+                    chance: queenSelection.percentage.toFixed(1),
+                    position: queenSelection.party.position || 'Unknown',
+                    isQualified: queenSelection.party.isQualified,
+                    inGovernment: queenSelection.party.inGovernment
+                }
+            };
+
             // Update King display
             document.getElementById('kingName').textContent = kingName;
             document.getElementById('kingCountry').textContent = kingSelection.party.name;
@@ -3585,39 +3617,48 @@
             royalSection.style.display = 'block';
         }
 
+        // Build a royal record from the party that was actually selected.
+        // Falls back to reading the DOM only if the selection was lost (e.g.
+        // an older saved state), and resolves the party by id first because
+        // entry names are not unique.
+        function buildRoyalRecord(role) {
+            const candidate = currentRoyalCandidates[role];
+            const prefix = role;
+            const name = document.getElementById(`${prefix}Name`).textContent;
+            const country = document.getElementById(`${prefix}Country`).textContent;
+
+            if (candidate && candidate.name === name && candidate.country === country) {
+                const entry = entries.find(e => e.id === candidate.partyId);
+                return {
+                    partyId: candidate.partyId,
+                    name: candidate.name,
+                    country: candidate.country,
+                    realCountry: (entry ? entry.realCountry : candidate.realCountry) || null,
+                    color: candidate.color,
+                    chance: candidate.chance,
+                    position: candidate.position,
+                    isQualified: candidate.isQualified,
+                    inGovernment: candidate.inGovernment
+                };
+            }
+
+            const entry = entries.find(e => e.name === country);
+            return {
+                partyId: entry ? entry.id : null,
+                name: name,
+                country: country,
+                realCountry: entry ? entry.realCountry : null,
+                color: document.getElementById(`${prefix}CountryDot`).style.background,
+                chance: document.getElementById(`${prefix}Chance`).textContent.replace('% chance', ''),
+                position: document.getElementById(`${prefix}Position`).textContent,
+                isQualified: document.getElementById(`${prefix}Qualified`).classList.contains('qualified'),
+                inGovernment: document.getElementById(`${prefix}Government`).classList.contains('in-government')
+            };
+        }
+
         function voteForRoyals() {
-            // Save current displayed royals including status data
-            const kingQualifiedEl = document.getElementById('kingQualified');
-            const kingGovEl = document.getElementById('kingGovernment');
-            const queenQualifiedEl = document.getElementById('queenQualified');
-            const queenGovEl = document.getElementById('queenGovernment');
-
-            // Get party names and look up real countries
-            const kingCountryName = document.getElementById('kingCountry').textContent;
-            const queenCountryName = document.getElementById('queenCountry').textContent;
-            const kingEntry = entries.find(e => e.name === kingCountryName);
-            const queenEntry = entries.find(e => e.name === queenCountryName);
-
-            savedKing = {
-                name: document.getElementById('kingName').textContent,
-                country: kingCountryName,
-                realCountry: kingEntry ? kingEntry.realCountry : null,
-                color: document.getElementById('kingCountryDot').style.background,
-                chance: document.getElementById('kingChance').textContent.replace('% chance', ''),
-                position: document.getElementById('kingPosition').textContent,
-                isQualified: kingQualifiedEl.classList.contains('qualified'),
-                inGovernment: kingGovEl.classList.contains('in-government')
-            };
-            savedQueen = {
-                name: document.getElementById('queenName').textContent,
-                country: queenCountryName,
-                realCountry: queenEntry ? queenEntry.realCountry : null,
-                color: document.getElementById('queenCountryDot').style.background,
-                chance: document.getElementById('queenChance').textContent.replace('% chance', ''),
-                position: document.getElementById('queenPosition').textContent,
-                isQualified: queenQualifiedEl.classList.contains('qualified'),
-                inGovernment: queenGovEl.classList.contains('in-government')
-            };
+            savedKing = buildRoyalRecord('king');
+            savedQueen = buildRoyalRecord('queen');
 
             royalsVoted = true;
 
@@ -3629,20 +3670,28 @@
             saveToStorage();
         }
 
+        // Resolve the entry a royal belongs to. Prefers the stored party id;
+        // only falls back to a name match for records saved before ids were kept.
+        function findRoyalEntry(royal) {
+            if (!royal) return null;
+            if (royal.partyId !== undefined && royal.partyId !== null) {
+                const byId = entries.find(e => e.id === royal.partyId);
+                if (byId) return byId;
+            }
+            return entries.find(e => e.name === royal.country) || null;
+        }
+
         function resaveRoyals() {
             // Re-save royals to update realCountry from current entries
             if (!savedKing && !savedQueen) return;
 
-            const kingCountryName = document.getElementById('kingCountry').textContent;
-            const queenCountryName = document.getElementById('queenCountry').textContent;
-            const kingEntry = entries.find(e => e.name === kingCountryName);
-            const queenEntry = entries.find(e => e.name === queenCountryName);
-
             if (savedKing) {
-                savedKing.realCountry = kingEntry ? kingEntry.realCountry : null;
+                const kingEntry = findRoyalEntry(savedKing);
+                savedKing.realCountry = kingEntry ? kingEntry.realCountry : savedKing.realCountry || null;
             }
             if (savedQueen) {
-                savedQueen.realCountry = queenEntry ? queenEntry.realCountry : null;
+                const queenEntry = findRoyalEntry(savedQueen);
+                savedQueen.realCountry = queenEntry ? queenEntry.realCountry : savedQueen.realCountry || null;
             }
 
             // Persist to storage
@@ -3818,41 +3867,40 @@
                 const kingName = document.getElementById('kingName').textContent;
                 const queenName = document.getElementById('queenName').textContent;
 
+                // Prefer the record built when the royals were voted in - it
+                // carries the party id, so the real country matches the party
+                // that was actually crowned even if names repeat.
                 if (kingName && kingName !== '-') {
-                    const kingCountryName = document.getElementById('kingCountry').textContent;
-                    // Use savedKing.realCountry if available (from voteForRoyals), otherwise look up
-                    let kingRealCountry = savedKing ? savedKing.realCountry : null;
-                    if (!kingRealCountry) {
-                        const kingEntry = entries.find(e => e.name === kingCountryName);
-                        kingRealCountry = kingEntry ? kingEntry.realCountry : null;
-                    }
+                    const king = (savedKing && savedKing.name === kingName)
+                        ? savedKing
+                        : buildRoyalRecord('king');
+                    const kingEntry = findRoyalEntry(king);
                     historyEntry.king = {
-                        name: kingName,
-                        country: kingCountryName,
-                        realCountry: kingRealCountry,
-                        color: document.getElementById('kingCountryDot').style.background,
-                        position: document.getElementById('kingPosition').textContent,
-                        isQualified: document.getElementById('kingQualified').classList.contains('qualified'),
-                        inGovernment: document.getElementById('kingGovernment').classList.contains('in-government')
+                        partyId: king.partyId !== undefined ? king.partyId : null,
+                        name: king.name,
+                        country: king.country,
+                        realCountry: (kingEntry ? kingEntry.realCountry : king.realCountry) || null,
+                        color: king.color,
+                        position: king.position,
+                        isQualified: king.isQualified,
+                        inGovernment: king.inGovernment
                     };
                 }
 
                 if (queenName && queenName !== '-') {
-                    const queenCountryName = document.getElementById('queenCountry').textContent;
-                    // Use savedQueen.realCountry if available (from voteForRoyals), otherwise look up
-                    let queenRealCountry = savedQueen ? savedQueen.realCountry : null;
-                    if (!queenRealCountry) {
-                        const queenEntry = entries.find(e => e.name === queenCountryName);
-                        queenRealCountry = queenEntry ? queenEntry.realCountry : null;
-                    }
+                    const queen = (savedQueen && savedQueen.name === queenName)
+                        ? savedQueen
+                        : buildRoyalRecord('queen');
+                    const queenEntry = findRoyalEntry(queen);
                     historyEntry.queen = {
-                        name: queenName,
-                        country: queenCountryName,
-                        realCountry: queenRealCountry,
-                        color: document.getElementById('queenCountryDot').style.background,
-                        position: document.getElementById('queenPosition').textContent,
-                        isQualified: document.getElementById('queenQualified').classList.contains('qualified'),
-                        inGovernment: document.getElementById('queenGovernment').classList.contains('in-government')
+                        partyId: queen.partyId !== undefined ? queen.partyId : null,
+                        name: queen.name,
+                        country: queen.country,
+                        realCountry: (queenEntry ? queenEntry.realCountry : queen.realCountry) || null,
+                        color: queen.color,
+                        position: queen.position,
+                        isQualified: queen.isQualified,
+                        inGovernment: queen.inGovernment
                     };
                 }
             }
@@ -4549,6 +4597,7 @@
                 royalsVoted = false;
                 savedKing = null;
                 savedQueen = null;
+                currentRoyalCandidates = { king: null, queen: null };
                 // Reset assigned countries
                 assignedCountries.clear();
                 renderResults();
