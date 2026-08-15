@@ -27,6 +27,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Generate version.json
+        run: |
+          cat > version.json <<EOF
+          {
+            "sha": "${GITHUB_SHA}",
+            "branch": "${GITHUB_REF_NAME}",
+            "commitDate": "$(git show -s --format=%cI ${GITHUB_SHA})",
+            "buildDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "subject": $(git show -s --format=%s ${GITHUB_SHA} | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))')
+          }
+          EOF
+          cat version.json
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
