@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influence Over Time - Election Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+        header { text-align: center; margin-bottom: 30px; }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle { color: #a0a0a0; font-size: 1.1rem; }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            color: #e94560;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        .back-link:hover { color: #ff6b6b; }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .panel h2 {
+            font-size: 1.4rem;
+            color: #ffd700;
+            margin-bottom: 6px;
+        }
+
+        .panel .hint { color: #a0a0a0; font-size: 0.9rem; margin-bottom: 18px; }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: #ffd700; }
+        .stat-label { color: #a0a0a0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #c0c0c0;
+        }
+
+        select, input[type="search"] {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #fff;
+            padding: 7px 10px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        select option { background: #1a1a2e; }
+
+        /* ---- chart ---- */
+        .chart-wrap { position: relative; overflow-x: auto; }
+        svg.chart { display: block; width: 100%; min-width: 640px; height: auto; }
+
+        .grid-line { stroke: rgba(255, 255, 255, 0.08); stroke-width: 1; }
+        .axis-line { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
+        .axis-label { fill: #8a8a9a; font-size: 11px; }
+        .axis-title { fill: #a0a0a0; font-size: 12px; font-weight: 600; }
+
+        .series-path { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+        .series-path.dim { opacity: 0.15; stroke-width: 1.5; }
+        .series-dot { r: 3; }
+        .series-dot.dim { opacity: 0.15; }
+
+        .hover-guide { stroke: rgba(255, 215, 0, 0.5); stroke-width: 1; stroke-dasharray: 4 3; }
+
+        .tooltip {
+            position: absolute;
+            pointer-events: none;
+            background: rgba(15, 15, 30, 0.97);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.82rem;
+            min-width: 190px;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.12s;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        .tooltip.visible { opacity: 1; }
+        .tooltip .tt-year { color: #ffd700; font-weight: 700; margin-bottom: 6px; }
+        .tooltip .tt-row { display: flex; justify-content: space-between; gap: 14px; }
+        .tooltip .tt-name { display: flex; align-items: center; gap: 6px; color: #ddd; }
+        .tooltip .tt-swatch { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+        .tooltip .tt-val { color: #fff; font-weight: 600; }
+
+        .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .legend-item:hover { background: rgba(255, 255, 255, 0.12); }
+        .legend-item.off { opacity: 0.35; }
+        .legend-swatch { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+
+        /* ---- tables ---- */
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            color: #a0a0a0;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            white-space: nowrap;
+        }
+        td { padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
+        td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .rank { font-weight: 700; color: #ffd700; width: 44px; }
+        .country-cell { display: flex; align-items: center; gap: 9px; }
+        .country-cell a { color: #fff; text-decoration: none; font-weight: 600; }
+        .country-cell a:hover { color: #ffd700; text-decoration: underline; }
+
+        .bar-track {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            height: 7px;
+            width: 100%;
+            min-width: 70px;
+            overflow: hidden;
+        }
+        .bar-fill { height: 100%; border-radius: 4px; }
+
+        .peak { color: #a0a0a0; font-size: 0.85rem; }
+
+        /* ---- breakdown ---- */
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 15px;
+        }
+        .breakdown-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+        }
+        .breakdown-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .breakdown-head .bh-name { font-weight: 700; }
+        .breakdown-head .bh-total { color: #ffd700; font-weight: 700; }
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.85rem;
+            padding: 2px 0;
+        }
+        .item-row .it-label { color: #d0d0d0; }
+        .item-row .it-detail { color: #7a7a8a; font-size: 0.78rem; }
+        .item-row .it-points { color: #9be89b; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .carried {
+            margin-top: 9px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.12);
+            font-size: 0.82rem;
+            color: #a0a0a0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .carried strong { color: #ffd700; }
+
+        /* ---- docs ---- */
+        details.docs { border-radius: 12px; }
+        details.docs summary {
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffd700;
+            list-style: none;
+            padding: 4px 0;
+        }
+        details.docs summary::-webkit-details-marker { display: none; }
+        details.docs summary::before { content: '▸ '; }
+        details.docs[open] summary::before { content: '▾ '; }
+        .docs-body { margin-top: 16px; }
+        .docs-body h3 {
+            font-size: 1rem;
+            color: #9b59b6;
+            margin: 20px 0 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .docs-body p { color: #c0c0c0; font-size: 0.92rem; margin-bottom: 10px; }
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid #6f42c1;
+            border-radius: 6px;
+            padding: 12px 15px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.85rem;
+            color: #d8d8e8;
+            overflow-x: auto;
+            margin: 10px 0 14px;
+        }
+        .mult-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .mult-chip {
+            background: rgba(111, 66, 193, 0.2);
+            border: 1px solid rgba(155, 89, 182, 0.4);
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 0.85rem;
+        }
+        .mult-chip strong { color: #ffd700; }
+
+        .empty { text-align: center; padding: 50px 20px; color: #a0a0a0; }
+        .empty h2 { color: #fff; margin-bottom: 10px; }
+
+        @media (max-width: 700px) {
+            h1 { font-size: 1.8rem; }
+            .container { padding: 20px 12px; }
+            .panel { padding: 18px 14px; }
+            th, td { padding: 8px 7px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="history.html" class="back-link">← Back to History</a>
+
+        <header>
+            <h1>Influence Over Time</h1>
+            <p class="subtitle">Who actually holds power, cycle by cycle — and how long it lasts</p>
+        </header>
+
+        <div id="content" style="display: none;">
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-value" id="statYears">0</div>
+                    <div class="stat-label">Election Cycles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statCountries">0</div>
+                    <div class="stat-label">Countries Ranked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statLeader">-</div>
+                    <div class="stat-label">Current Leader</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statPeak">-</div>
+                    <div class="stat-label">Highest Ever</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Influence Curve</h2>
+                <p class="hint">Each line is a country. Hover the chart to read every value for that cycle; click a legend chip to isolate or hide a country.</p>
+
+                <div class="controls">
+                    <label class="control">Show
+                        <select id="topN">
+                            <option value="5">top 5</option>
+                            <option value="10" selected>top 10</option>
+                            <option value="20">top 20</option>
+                            <option value="0">all countries</option>
+                        </select>
+                    </label>
+                    <label class="control">Ranked by
+                        <select id="rankBy">
+                            <option value="current" selected>influence now</option>
+                            <option value="peak">peak influence</option>
+                            <option value="total">total earned</option>
+                        </select>
+                    </label>
+                    <label class="control">Decay per cycle
+                        <select id="decay"></select>
+                    </label>
+                </div>
+
+                <div class="chart-wrap" id="chartWrap">
+                    <svg class="chart" id="chart" viewBox="0 0 960 420" preserveAspectRatio="xMidYMid meet"></svg>
+                    <div class="tooltip" id="tooltip"></div>
+                </div>
+
+                <div class="legend" id="legend"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Standings</h2>
+                <p class="hint">Influence as of the most recent cycle, with the peak each country ever reached.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="rank">#</th>
+                            <th>Country</th>
+                            <th class="num">Influence</th>
+                            <th style="width: 22%;">Share</th>
+                            <th class="num">Peak</th>
+                            <th class="num">Total earned</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standingsBody"></tbody>
+                </table>
+            </div>
+
+            <div class="panel">
+                <h2>Where the points came from</h2>
+                <p class="hint">Every role scored in a single cycle. This is the raw input to the curve above — pick a year to inspect it.</p>
+                <div class="controls">
+                    <label class="control">Cycle
+                        <select id="yearSelect"></select>
+                    </label>
+                </div>
+                <div class="breakdown-grid" id="breakdownGrid"></div>
+            </div>
+
+            <div class="panel">
+                <details class="docs" id="docs">
+                    <summary>How influence is calculated</summary>
+                    <div class="docs-body" id="docsBody"></div>
+                </details>
+            </div>
+        </div>
+
+        <div class="empty" id="empty">
+            <h2>No history yet</h2>
+            <p>Save at least one government from the calculator and the influence curve will appear here.</p>
+            <p style="margin-top: 18px;"><a href="index.html" class="back-link">Go to the Election Calculator →</a></p>
+        </div>
+    </div>
+
+    <script src="influence.js"></script>
+    <script>
+        const HISTORY_STORAGE_KEY = 'electionCalculatorHistory';
+
+        let history = [];
+        let timeline = null;
+        let visible = new Set();   // countries currently drawn
+        let isolated = null;       // country pinned via legend click
+
+        function loadHistory() {
+            try {
+                const data = localStorage.getItem(HISTORY_STORAGE_KEY);
+                history = data ? JSON.parse(data) : [];
+            } catch (e) {
+                history = [];
+            }
+        }
+
+        /** Stable, well-spread colour per country using the golden angle. */
+        const colorCache = {};
+        function colorFor(country) {
+            if (colorCache[country]) return colorCache[country];
+            let hash = 0;
+            for (let i = 0; i < country.length; i++) {
+                hash = (hash * 31 + country.charCodeAt(i)) >>> 0;
+            }
+            const hue = (hash * 137.508) % 360;
+            const sat = 62 + (hash % 18);
+            const light = 55 + (hash % 12);
+            colorCache[country] = `hsl(${hue.toFixed(1)}, ${sat}%, ${light}%)`;
+            return colorCache[country];
+        }
+
+        function fmt(value) {
+            return value >= 100 ? Math.round(value).toLocaleString() : value.toFixed(1);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text == null ? '' : text;
+            return div.innerHTML;
+        }
+
+        /** Countries ordered by the currently selected ranking metric. */
+        function rankedCountries() {
+            const mode = document.getElementById('rankBy').value;
+            const lastIndex = timeline.years.length - 1;
+
+            return timeline.countries.slice().sort((a, b) => {
+                if (mode === 'peak') {
+                    return Math.max(...timeline.series[b]) - Math.max(...timeline.series[a]);
+                }
+                if (mode === 'total') {
+                    const sum = arr => arr.reduce((s, v) => s + v, 0);
+                    return sum(timeline.earned[b]) - sum(timeline.earned[a]);
+                }
+                return timeline.series[b][lastIndex] - timeline.series[a][lastIndex];
+            });
+        }
+
+        function selectedCountries() {
+            const topN = parseInt(document.getElementById('topN').value, 10);
+            const ranked = rankedCountries();
+            return topN > 0 ? ranked.slice(0, topN) : ranked;
+        }
+
+        // ---------------------------------------------------------------
+        // Chart
+        // ---------------------------------------------------------------
+        const VIEW = { w: 960, h: 420, left: 62, right: 18, top: 18, bottom: 46 };
+
+        function drawChart(countries) {
+            const svg = document.getElementById('chart');
+            const plotW = VIEW.w - VIEW.left - VIEW.right;
+            const plotH = VIEW.h - VIEW.top - VIEW.bottom;
+            const years = timeline.years;
+
+            const drawn = countries.filter(c => visible.has(c));
+            let maxValue = 0;
+            drawn.forEach(c => {
+                timeline.series[c].forEach(v => { if (v > maxValue) maxValue = v; });
+            });
+            if (maxValue <= 0) maxValue = 1;
+
+            // Round the axis up to a friendly step
+            const rawStep = maxValue / 5;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const step = Math.ceil(rawStep / magnitude) * magnitude;
+            const axisMax = step * 5;
+
+            const x = i => years.length === 1
+                ? VIEW.left + plotW / 2
+                : VIEW.left + (i / (years.length - 1)) * plotW;
+            const y = v => VIEW.top + plotH - (v / axisMax) * plotH;
+
+            const parts = [];
+
+            // horizontal grid + value labels
+            for (let g = 0; g <= 5; g++) {
+                const value = step * g;
+                const py = y(value);
+                parts.push(`<line class="grid-line" x1="${VIEW.left}" y1="${py}" x2="${VIEW.left + plotW}" y2="${py}"/>`);
+                parts.push(`<text class="axis-label" x="${VIEW.left - 9}" y="${py + 4}" text-anchor="end">${fmt(value)}</text>`);
+            }
+
+            // axes
+            parts.push(`<line class="axis-line" x1="${VIEW.left}" y1="${VIEW.top}" x2="${VIEW.left}" y2="${VIEW.top + plotH}"/>`);
+            parts.push(`<line class="axis-line" x1="${VIEW.left}" y1="${VIEW.top + plotH}" x2="${VIEW.left + plotW}" y2="${VIEW.top + plotH}"/>`);
+
+            // year labels - thin out when crowded
+            const labelEvery = Math.max(1, Math.ceil(years.length / 14));
+            years.forEach((year, i) => {
+                if (i % labelEvery !== 0 && i !== years.length - 1) return;
+                parts.push(`<text class="axis-label" x="${x(i)}" y="${VIEW.top + plotH + 18}" text-anchor="middle">${year}</text>`);
+            });
+
+            parts.push(`<text class="axis-title" x="${VIEW.left + plotW / 2}" y="${VIEW.h - 8}" text-anchor="middle">Year</text>`);
+            parts.push(`<text class="axis-title" transform="rotate(-90 14 ${VIEW.top + plotH / 2})" x="14" y="${VIEW.top + plotH / 2}" text-anchor="middle">Influence</text>`);
+
+            // hover guide (positioned on mousemove)
+            parts.push(`<line class="hover-guide" id="hoverGuide" x1="0" y1="${VIEW.top}" x2="0" y2="${VIEW.top + plotH}" style="display:none"/>`);
+
+            // series
+            drawn.forEach(country => {
+                const dim = isolated && isolated !== country ? ' dim' : '';
+                const color = colorFor(country);
+                const points = timeline.series[country].map((v, i) => `${x(i)},${y(v)}`).join(' L ');
+                parts.push(`<path class="series-path${dim}" stroke="${color}" d="M ${points}"/>`);
+                if (years.length <= 30) {
+                    timeline.series[country].forEach((v, i) => {
+                        parts.push(`<circle class="series-dot${dim}" cx="${x(i)}" cy="${y(v)}" fill="${color}"/>`);
+                    });
+                }
+            });
+
+            svg.innerHTML = parts.join('');
+            attachHover(svg, drawn, x);
+        }
+
+        function attachHover(svg, drawn, x) {
+            const wrap = document.getElementById('chartWrap');
+            const tooltip = document.getElementById('tooltip');
+            const guide = document.getElementById('hoverGuide');
+            const years = timeline.years;
+
+            function hide() {
+                tooltip.classList.remove('visible');
+                if (guide) guide.style.display = 'none';
+            }
+
+            svg.onmouseleave = hide;
+            svg.onmousemove = function (event) {
+                if (!drawn.length || !years.length) return hide();
+
+                const rect = svg.getBoundingClientRect();
+                const scale = VIEW.w / rect.width;
+                const svgX = (event.clientX - rect.left) * scale;
+
+                // nearest cycle to the cursor
+                let index = 0;
+                let best = Infinity;
+                years.forEach((_, i) => {
+                    const distance = Math.abs(x(i) - svgX);
+                    if (distance < best) { best = distance; index = i; }
+                });
+
+                if (guide) {
+                    guide.setAttribute('x1', x(index));
+                    guide.setAttribute('x2', x(index));
+                    guide.style.display = '';
+                }
+
+                const rows = drawn
+                    .map(c => ({ country: c, value: timeline.series[c][index], gained: timeline.earned[c][index] }))
+                    .sort((a, b) => b.value - a.value)
+                    .slice(0, 12);
+
+                tooltip.innerHTML =
+                    `<div class="tt-year">Year ${years[index]}</div>` +
+                    rows.map(r => `
+                        <div class="tt-row">
+                            <span class="tt-name">
+                                <span class="tt-swatch" style="background:${colorFor(r.country)}"></span>
+                                ${escapeHtml(r.country)}
+                            </span>
+                            <span class="tt-val">${fmt(r.value)}${r.gained > 0 ? ` <span style="color:#9be89b">+${fmt(r.gained)}</span>` : ''}</span>
+                        </div>`).join('');
+
+                tooltip.classList.add('visible');
+
+                // keep the tooltip inside the panel
+                const left = (x(index) / scale) + 16;
+                const maxLeft = wrap.clientWidth - tooltip.offsetWidth - 8;
+                tooltip.style.left = Math.max(8, Math.min(left, maxLeft)) + 'px';
+                tooltip.style.top = Math.max(8, event.clientY - rect.top - tooltip.offsetHeight / 2) + 'px';
+            };
+        }
+
+        function drawLegend(countries) {
+            const legend = document.getElementById('legend');
+            legend.innerHTML = countries.map(country => `
+                <div class="legend-item${visible.has(country) ? '' : ' off'}"
+                     data-country="${escapeHtml(country)}"
+                     title="Click to isolate, double-click to hide">
+                    <span class="legend-swatch" style="background:${colorFor(country)}"></span>
+                    ${escapeHtml(country)}
+                </div>`).join('');
+
+            legend.querySelectorAll('.legend-item').forEach(item => {
+                const country = item.dataset.country;
+                item.onclick = () => {
+                    isolated = isolated === country ? null : country;
+                    render();
+                };
+                item.ondblclick = () => {
+                    if (visible.has(country)) visible.delete(country); else visible.add(country);
+                    isolated = null;
+                    render();
+                };
+            });
+        }
+
+        // ---------------------------------------------------------------
+        // Standings
+        // ---------------------------------------------------------------
+        function drawStandings() {
+            const body = document.getElementById('standingsBody');
+            const lastIndex = timeline.years.length - 1;
+            const ranked = rankedCountries();
+            const top = ranked.length ? timeline.series[ranked[0]][lastIndex] : 0;
+
+            body.innerHTML = ranked.map((country, i) => {
+                const current = timeline.series[country][lastIndex];
+                const peakValue = Math.max(...timeline.series[country]);
+                const peakYear = timeline.years[timeline.series[country].indexOf(peakValue)];
+                const total = timeline.earned[country].reduce((s, v) => s + v, 0);
+                const pct = top > 0 ? (current / top) * 100 : 0;
+                const color = colorFor(country);
+
+                return `
+                    <tr>
+                        <td class="rank">${i + 1}</td>
+                        <td>
+                            <span class="country-cell">
+                                <span class="legend-swatch" style="background:${color}"></span>
+                                <a href="country-detail.html?country=${encodeURIComponent(country)}">${escapeHtml(country)}</a>
+                            </span>
+                        </td>
+                        <td class="num"><strong>${fmt(current)}</strong></td>
+                        <td>
+                            <div class="bar-track"><div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div></div>
+                        </td>
+                        <td class="num peak">${fmt(peakValue)} <span style="opacity:0.6">(yr ${peakYear})</span></td>
+                        <td class="num peak">${fmt(total)}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        // ---------------------------------------------------------------
+        // Per-cycle breakdown
+        // ---------------------------------------------------------------
+        function drawBreakdown() {
+            const select = document.getElementById('yearSelect');
+            const index = parseInt(select.value, 10);
+            const grid = document.getElementById('breakdownGrid');
+            const scores = timeline.yearScores[index];
+
+            const countries = Object.keys(scores).sort((a, b) => scores[b].total - scores[a].total);
+            if (!countries.length) {
+                grid.innerHTML = '<p class="hint">No scoring roles recorded for this cycle.</p>';
+                return;
+            }
+
+            grid.innerHTML = countries.map(country => {
+                const data = scores[country];
+                const items = data.items
+                    .slice()
+                    .sort((a, b) => b.points - a.points)
+                    .map(item => `
+                        <div class="item-row">
+                            <span class="it-label">${escapeHtml(item.label)}${item.detail ? `<span class="it-detail"> — ${escapeHtml(item.detail)}</span>` : ''}</span>
+                            <span class="it-points">+${item.points.toFixed(1)}</span>
+                        </div>`).join('');
+
+                // What the country actually shows on the curve that cycle,
+                // i.e. this year's points plus everything carried over.
+                const standing = timeline.series[country][index];
+                const carried = standing - data.total;
+
+                return `
+                    <div class="breakdown-card">
+                        <div class="breakdown-head">
+                            <span class="bh-name">
+                                <span class="legend-swatch" style="background:${colorFor(country)};display:inline-block"></span>
+                                ${escapeHtml(country)}
+                            </span>
+                            <span class="bh-total">+${fmt(data.total)}</span>
+                        </div>
+                        ${items}
+                        <div class="carried">
+                            <span>carried over ${carried > 0 ? `+${fmt(carried)}` : '0'}</span>
+                            <span>standing <strong>${fmt(standing)}</strong></span>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // ---------------------------------------------------------------
+        // Documentation - rendered from the model so it cannot drift
+        // ---------------------------------------------------------------
+        function drawDocs() {
+            const spec = InfluenceModel.describe();
+            const decay = timeline.decay;
+            const halfLife = Math.log(0.5) / Math.log(decay);
+
+            const weightRows = spec.weights.map(w => `
+                <tr>
+                    <td><strong>${escapeHtml(w.label)}</strong></td>
+                    <td class="num">${w.points}</td>
+                    <td class="peak">${escapeHtml(w.note)}</td>
+                </tr>`).join('');
+
+            const portfolioChips = Object.entries(spec.portfolioMultipliers)
+                .map(([name, mult]) => `<span class="mult-chip">${escapeHtml(name)} <strong>×${mult}</strong></span>`)
+                .join('');
+
+            const committeeChips = Object.entries(spec.committeeMultipliers)
+                .map(([name, mult]) => `<span class="mult-chip">${escapeHtml(name)} <strong>×${mult}</strong></span>`)
+                .join('');
+
+            document.getElementById('docsBody').innerHTML = `
+                <p>Influence is never stored. It is recomputed from the saved history every time this page loads, so editing or deleting a saved government immediately changes the curve.</p>
+
+                <h3>The two rules</h3>
+                <p><strong>1. Earning.</strong> In each election cycle a country collects points for every role it holds that cycle.</p>
+                <p><strong>2. Fading.</strong> Those points keep counting afterwards, shrinking by the decay factor once per cycle.</p>
+                <div class="formula">influence(country, Y) = Σ  score(country, y) × ${decay}<sup>(Y − y)</sup>&nbsp;&nbsp;for every cycle y ≤ Y</div>
+                <p>At a decay of <strong>${decay}</strong>, influence halves about every <strong>${halfLife.toFixed(1)} cycles</strong> (${(halfLife * 4).toFixed(0)} in-game years) if a country wins nothing further. A decay of 1.00 turns the curve into a running career total.</p>
+
+                <h3>Points per role, per cycle</h3>
+                <table>
+                    <thead><tr><th>Attribute</th><th class="num">Points</th><th>Notes</th></tr></thead>
+                    <tbody>${weightRows}</tbody>
+                </table>
+
+                <h3>Cabinet portfolio multipliers</h3>
+                <p>Cabinet seats are worth ${spec.weights.find(w => w.key === 'minister').points} points each, scaled by the portfolio held. Portfolios are recovered from the stored per-party minister counts in allocation order, exactly as the Minister Positions page does. Anything not listed counts ×1.0.</p>
+                <div class="mult-list">${portfolioChips}</div>
+
+                <h3>Committee chair multipliers</h3>
+                <p>Chairs are worth ${spec.weights.find(w => w.key === 'committee').points} points each, scaled by the committee. Anything not listed counts ×1.0.</p>
+                <div class="mult-list">${committeeChips}</div>
+
+                <h3>Worked example</h3>
+                <p>A country leading a majority government with 40% of parliament, holding five cabinet seats (Prime Minister plus Finance, Foreign Affairs, Interior and Defense) and chairing Budget &amp; Finance:</p>
+                <div class="formula">Prime Minister            100.0
+Majority government        15.0
+In coalition               20.0
+Majority coalition          5.0
+In parliament               5.0
+Seat share  40 × 0.40      16.0
+Finance     12 × 1.6       19.2
+Foreign Aff 12 × 1.5       18.0
+Interior    12 × 1.4       16.8
+Defense     12 × 1.4       16.8
+Chair: Budget &amp; Finance  8 × 1.6      12.8
+─────────────────────────────────
+earned this cycle         244.6
+next cycle, if it wins nothing:  244.6 × ${decay} = ${(244.6 * decay).toFixed(1)}</div>
+
+                <h3>What is deliberately left out</h3>
+                <p>The election analysis figures (Gallagher index, wasted votes, effective parties) describe the health of the whole election rather than any one country, so they earn nobody points. Committee chairs are matched to a country through the party name recorded on the chair, which is the only link stored with a committee.</p>
+            `;
+        }
+
+        // ---------------------------------------------------------------
+        function render() {
+            const countries = selectedCountries();
+            countries.forEach(c => { if (!visible.has(c) && isolated === null) visible.add(c); });
+            drawChart(countries);
+            drawLegend(countries);
+            drawStandings();
+            drawBreakdown();
+        }
+
+        function recompute() {
+            const decay = parseFloat(document.getElementById('decay').value);
+            timeline = InfluenceModel.computeTimeline(history, { decay: decay });
+
+            visible = new Set(selectedCountries());
+            isolated = null;
+
+            const lastIndex = timeline.years.length - 1;
+            const ranked = rankedCountries();
+
+            document.getElementById('statYears').textContent = timeline.years.length;
+            document.getElementById('statCountries').textContent = timeline.countries.length;
+            document.getElementById('statLeader').textContent = ranked.length ? ranked[0] : '-';
+
+            let peakCountry = '-';
+            let peakValue = 0;
+            timeline.countries.forEach(c => {
+                const localPeak = Math.max(...timeline.series[c]);
+                if (localPeak > peakValue) { peakValue = localPeak; peakCountry = c; }
+            });
+            document.getElementById('statPeak').textContent = peakValue > 0 ? fmt(peakValue) : '-';
+            document.getElementById('statPeak').title = peakCountry;
+            document.getElementById('statLeader').style.fontSize =
+                (ranked.length && ranked[0].length > 12) ? '1.1rem' : '1.8rem';
+
+            render();
+            drawDocs();
+            void lastIndex;
+        }
+
+        function init() {
+            loadHistory();
+
+            if (!history.length) {
+                document.getElementById('empty').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('empty').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+
+            // decay options, defaulting to the model's own value
+            const decaySelect = document.getElementById('decay');
+            [
+                { value: 0.6,  label: '0.60 — fast' },
+                { value: 0.75, label: '0.75 — default' },
+                { value: 0.9,  label: '0.90 — slow' },
+                { value: 1,    label: '1.00 — none' }
+            ].forEach(option => {
+                const el = document.createElement('option');
+                el.value = option.value;
+                el.textContent = option.label;
+                if (option.value === InfluenceModel.DECAY) el.selected = true;
+                decaySelect.appendChild(el);
+            });
+
+            // year picker defaults to the latest cycle
+            const sorted = history.slice().sort((a, b) => (a.year || 0) - (b.year || 0));
+            const yearSelect = document.getElementById('yearSelect');
+            yearSelect.innerHTML = sorted
+                .map((entry, i) => `<option value="${i}">Year ${entry.year}</option>`)
+                .join('');
+            yearSelect.value = String(sorted.length - 1);
+
+            document.getElementById('topN').onchange = () => {
+                visible = new Set(selectedCountries());
+                isolated = null;
+                render();
+            };
+            document.getElementById('rankBy').onchange = () => {
+                visible = new Set(selectedCountries());
+                isolated = null;
+                render();
+            };
+            decaySelect.onchange = recompute;
+            yearSelect.onchange = drawBreakdown;
+            window.addEventListener('resize', () => drawChart(selectedCountries()));
+
+            recompute();
+        }
+
+        init();
+    </script>
+    <script src="version.js"></script>
+</body>
+</html>

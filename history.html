@@ -660,6 +660,14 @@
             </div>
         </div>
 
+        <div id="influenceLink" class="country-stats-section" style="display: none;">
+            <h2>📈 Influence Over Time</h2>
+            <p style="text-align: center; color: #a0a0a0; margin-bottom: 15px;">Weighted power score per country per year, decaying as governments pass</p>
+            <div style="text-align: center;">
+                <a href="influence.html" class="btn-view-detail">View Influence Graph →</a>
+            </div>
+        </div>
+
         <div id="countriesDatasetLink" class="country-stats-section" style="display: none;">
             <h2>📊 Countries Dataset</h2>
             <p style="text-align: center; color: #a0a0a0; margin-bottom: 15px;">Complete statistics for all countries including Double and Triple Crowns</p>
@@ -946,7 +954,8 @@
             // Render wing statistics
             renderWingStats();
 
-            // Show countries dataset link
+            // Show countries dataset and influence links
+            document.getElementById('influenceLink').style.display = 'block';
             document.getElementById('countriesDatasetLink').style.display = 'block';
         }
 
