@@ -171,7 +171,25 @@
         tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
         td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        th.sortable:hover { color: #fff; }
+        th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.3;
+            font-size: 0.9em;
+        }
+        th.sortable.sorted-desc::after { content: ' ▼'; opacity: 1; color: #ffd700; }
+        th.sortable.sorted-asc::after  { content: ' ▲'; opacity: 1; color: #ffd700; }
+
         .rank { font-weight: 700; color: #ffd700; width: 44px; }
+
+        .lead-count { font-weight: 600; }
+        .lead-count.none { color: #6a6a7a; font-weight: 400; }
+        .crown { color: #ffd700; }
         .country-cell { display: flex; align-items: center; gap: 9px; }
         .country-cell a { color: #fff; text-decoration: none; font-weight: 600; }
         .country-cell a:hover { color: #ffd700; text-decoration: underline; }
@@ -350,16 +368,17 @@
 
             <div class="panel">
                 <h2>Standings</h2>
-                <p class="hint">Influence as of the most recent cycle, with the peak each country ever reached.</p>
+                <p class="hint">Influence as of the most recent cycle, with the peak each country ever reached and the number of cycles it finished on top. Click any column heading to reorder.</p>
                 <table>
                     <thead>
                         <tr>
                             <th class="rank">#</th>
-                            <th>Country</th>
-                            <th class="num">Influence</th>
-                            <th style="width: 22%;">Share</th>
-                            <th class="num">Peak</th>
-                            <th class="num">Total earned</th>
+                            <th class="sortable" data-key="country">Country</th>
+                            <th class="sortable num" data-key="current">Influence</th>
+                            <th style="width: 18%;">Share</th>
+                            <th class="sortable num" data-key="lead" title="Election cycles this country finished on top of the influence table">Years in lead</th>
+                            <th class="sortable num" data-key="peak">Peak</th>
+                            <th class="sortable num" data-key="total">Total earned</th>
                         </tr>
                     </thead>
                     <tbody id="standingsBody"></tbody>
@@ -400,6 +419,8 @@
         let timeline = null;
         let visible = new Set();   // countries currently drawn
         let isolated = null;       // country pinned via legend click
+        let leadCounts = {};       // country -> cycles finished on top
+        let standingsSort = { key: 'current', dir: 'desc' };
 
         function loadHistory() {
             try {
@@ -617,19 +638,80 @@
         // ---------------------------------------------------------------
         // Standings
         // ---------------------------------------------------------------
+
+        /**
+         * Count the cycles each country finished on top of the influence
+         * table. Exact ties share the lead; a cycle where nobody scored
+         * anything has no leader at all.
+         */
+        function computeLeadCounts() {
+            const counts = {};
+            timeline.countries.forEach(c => { counts[c] = 0; });
+
+            timeline.years.forEach((_, i) => {
+                let best = 0;
+                let leaders = [];
+                timeline.countries.forEach(country => {
+                    const value = timeline.series[country][i];
+                    if (value > best + 1e-9) {
+                        best = value;
+                        leaders = [country];
+                    } else if (value > 0 && Math.abs(value - best) < 1e-9) {
+                        leaders.push(country);
+                    }
+                });
+                if (best > 0) leaders.forEach(c => { counts[c]++; });
+            });
+
+            return counts;
+        }
+
+        /** One row of the standings table, before sorting. */
+        function standingsRows() {
+            const lastIndex = timeline.years.length - 1;
+
+            return timeline.countries.map(country => {
+                const series = timeline.series[country];
+                const peak = Math.max(...series);
+                return {
+                    country: country,
+                    current: series[lastIndex],
+                    peak: peak,
+                    peakYear: timeline.years[series.indexOf(peak)],
+                    total: timeline.earned[country].reduce((s, v) => s + v, 0),
+                    lead: leadCounts[country] || 0
+                };
+            });
+        }
+
+        function sortRows(rows) {
+            const dir = standingsSort.dir === 'asc' ? 1 : -1;
+            const key = standingsSort.key;
+
+            return rows.sort((a, b) => {
+                if (key === 'country') {
+                    return a.country.localeCompare(b.country) * dir;
+                }
+                const diff = (a[key] - b[key]) * dir;
+                // Keep the order stable and predictable when values tie
+                return diff !== 0 ? diff : a.country.localeCompare(b.country);
+            });
+        }
+
         function drawStandings() {
             const body = document.getElementById('standingsBody');
-            const lastIndex = timeline.years.length - 1;
-            const ranked = rankedCountries();
-            const top = ranked.length ? timeline.series[ranked[0]][lastIndex] : 0;
+            const rows = sortRows(standingsRows());
 
-            body.innerHTML = ranked.map((country, i) => {
-                const current = timeline.series[country][lastIndex];
-                const peakValue = Math.max(...timeline.series[country]);
-                const peakYear = timeline.years[timeline.series[country].indexOf(peakValue)];
-                const total = timeline.earned[country].reduce((s, v) => s + v, 0);
-                const pct = top > 0 ? (current / top) * 100 : 0;
-                const color = colorFor(country);
+            // The share bar always compares against the strongest country
+            // right now, whatever the table happens to be sorted by.
+            const top = Math.max(0, ...rows.map(r => r.current));
+
+            body.innerHTML = rows.map((row, i) => {
+                const pct = top > 0 ? (row.current / top) * 100 : 0;
+                const color = colorFor(row.country);
+                const leadLabel = row.lead > 0
+                    ? `<span class="lead-count"><span class="crown">♛</span> ${row.lead}</span>`
+                    : '<span class="lead-count none">—</span>';
 
                 return `
                     <tr>
@@ -637,17 +719,42 @@
                         <td>
                             <span class="country-cell">
                                 <span class="legend-swatch" style="background:${color}"></span>
-                                <a href="country-detail.html?country=${encodeURIComponent(country)}">${escapeHtml(country)}</a>
+                                <a href="country-detail.html?country=${encodeURIComponent(row.country)}">${escapeHtml(row.country)}</a>
                             </span>
                         </td>
-                        <td class="num"><strong>${fmt(current)}</strong></td>
+                        <td class="num"><strong>${fmt(row.current)}</strong></td>
                         <td>
                             <div class="bar-track"><div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div></div>
                         </td>
-                        <td class="num peak">${fmt(peakValue)} <span style="opacity:0.6">(yr ${peakYear})</span></td>
-                        <td class="num peak">${fmt(total)}</td>
+                        <td class="num">${leadLabel}</td>
+                        <td class="num peak">${fmt(row.peak)} <span style="opacity:0.6">(yr ${row.peakYear})</span></td>
+                        <td class="num peak">${fmt(row.total)}</td>
                     </tr>`;
             }).join('');
+
+            // Reflect the active sort in the header arrows
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (th.dataset.key === standingsSort.key) {
+                    th.classList.add(standingsSort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                }
+            });
+        }
+
+        function initStandingsSorting() {
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.onclick = () => {
+                    const key = th.dataset.key;
+                    if (standingsSort.key === key) {
+                        standingsSort.dir = standingsSort.dir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        standingsSort.key = key;
+                        // Names read best A-Z, numbers best highest-first
+                        standingsSort.dir = key === 'country' ? 'asc' : 'desc';
+                    }
+                    drawStandings();
+                };
+            });
         }
 
         // ---------------------------------------------------------------
@@ -780,6 +887,7 @@ next cycle, if it wins nothing:  244.6 × ${decay} = ${(244.6 * decay).toFixed(1
         function recompute() {
             const decay = parseFloat(document.getElementById('decay').value);
             timeline = InfluenceModel.computeTimeline(history, { decay: decay });
+            leadCounts = computeLeadCounts();
 
             visible = new Set(selectedCountries());
             isolated = null;
@@ -853,6 +961,7 @@ next cycle, if it wins nothing:  244.6 × ${decay} = ${(244.6 * decay).toFixed(1
             };
             decaySelect.onchange = recompute;
             yearSelect.onchange = drawBreakdown;
+            initStandingsSorting();
             window.addEventListener('resize', () => drawChart(selectedCountries()));
 
             recompute();
