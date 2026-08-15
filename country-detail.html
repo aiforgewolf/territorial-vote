@@ -207,6 +207,9 @@
         }
         table.infl-table tr:hover { background: rgba(255, 255, 255, 0.04); }
         table.infl-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+        table.infl-table td.rank-cell { white-space: nowrap; }
+        table.infl-table td.rank-cell .of-field { color: #7a7a8a; font-size: 0.78rem; }
+
         .rank-pill {
             display: inline-block;
             min-width: 30px;
@@ -225,6 +228,70 @@
         .delta-flat { color: #7a7a8a; }
         .infl-note { color: #8a8a9a; font-size: 0.85rem; margin-top: 10px; }
         .infl-note a { color: #ffd700; }
+
+        /* ---- comparison ---- */
+        .cmp-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0 16px;
+        }
+        .cmp-label { color: #a0a0a0; font-size: 0.87rem; }
+        .cmp-select {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 0.87rem;
+            font-family: inherit;
+            max-width: 220px;
+        }
+        .cmp-select option { background: #16213e; }
+        .cmp-clear {
+            background: rgba(233, 69, 96, 0.18);
+            border: 1px solid rgba(233, 69, 96, 0.45);
+            border-radius: 8px;
+            color: #ff8fa0;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .cmp-clear:hover { background: rgba(233, 69, 96, 0.3); }
+
+        table.infl-table th.cmp-group {
+            text-align: center;
+            font-size: 0.85rem;
+            text-transform: none;
+            letter-spacing: 0;
+            padding-bottom: 6px;
+        }
+        table.infl-table .cmp-sep { border-left: 2px solid rgba(255, 255, 255, 0.14); }
+
+        table.infl-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        table.infl-table th.sortable:hover { color: #fff; }
+        table.infl-table th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.3;
+            font-size: 0.9em;
+        }
+        table.infl-table th.sortable.sorted-desc::after { content: ' ▼'; opacity: 1; color: #ffd700; }
+        table.infl-table th.sortable.sorted-asc::after  { content: ' ▲'; opacity: 1; color: #ffd700; }
+        table.infl-table td.cmp-none { text-align: center; color: #6a6a7a; }
+        .legend-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
 
         .section h2 {
             color: #ffd700;
@@ -437,15 +504,42 @@
         // influence page - nothing about influence is ever stored.
         // -------------------------------------------------------------
 
+        let influenceTimeline = null;      // cached per page render
+        let compareCountries = [];         // up to two extra countries
+        // Which column orders the year-by-year table. `view` is the index of
+        // the country whose column was clicked, so each side sorts on its own.
+        let influenceSort = { key: 'year', view: 0, dir: 'desc' };
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text == null ? '' : text;
+            return div.innerHTML;
+        }
+
+        function getInfluenceTimeline() {
+            if (typeof InfluenceModel === 'undefined') return null;
+            if (!influenceTimeline) {
+                influenceTimeline = InfluenceModel.computeTimeline(history);
+            }
+            return influenceTimeline;
+        }
+
+        /** Stable colour per country, matching the influence page's scheme. */
+        function colorForCountry(country) {
+            let hash = 0;
+            for (let i = 0; i < country.length; i++) {
+                hash = (hash * 31 + country.charCodeAt(i)) >>> 0;
+            }
+            return `hsl(${((hash * 137.508) % 360).toFixed(1)}, ${62 + (hash % 18)}%, ${55 + (hash % 12)}%)`;
+        }
+
         /**
          * Everything this page needs about one country's influence:
          * its value and rank each cycle, plus the derived tallies.
          */
         function buildInfluenceView(country) {
-            if (typeof InfluenceModel === 'undefined') return null;
-
-            const timeline = InfluenceModel.computeTimeline(history);
-            if (timeline.countries.indexOf(country) === -1) return null;
+            const timeline = getInfluenceTimeline();
+            if (!timeline || timeline.countries.indexOf(country) === -1) return null;
 
             const series = timeline.series[country];
             const earned = timeline.earned[country];
@@ -474,6 +568,7 @@
             const peak = rows.reduce((best, r) => (r.value > best.value ? r : best), rows[0]);
 
             return {
+                country: country,
                 rows: rows,
                 current: last,
                 peak: peak,
@@ -486,13 +581,22 @@
             };
         }
 
-        /** Single-series influence chart, drawn as a plain inline SVG. */
-        function influenceChartSvg(rows) {
+        /**
+         * Influence chart. The first view is the page's country, drawn filled
+         * with its points coloured by the place held that cycle; any compared
+         * countries are drawn as plain lines in their own colour.
+         */
+        function influenceChartSvg(views) {
             const W = 900, H = 250, L = 56, R = 16, T = 14, B = 34;
             const plotW = W - L - R;
             const plotH = H - T - B;
 
-            const maxValue = Math.max(...rows.map(r => r.value), 1);
+            const primary = views[0];
+            const rows = primary.rows;
+
+            let maxValue = 1;
+            views.forEach(v => v.rows.forEach(r => { if (r.value > maxValue) maxValue = r.value; }));
+
             const step = Math.pow(10, Math.floor(Math.log10(maxValue / 4)));
             const axisStep = Math.ceil((maxValue / 4) / step) * step;
             const axisMax = axisStep * 4;
@@ -518,6 +622,22 @@
                 parts.push(`<text class="a-text" x="${x(i)}" y="${T + plotH + 17}" text-anchor="middle">${row.year}</text>`);
             });
 
+            // Compared countries first, so the primary always sits on top
+            views.slice(1).forEach(view => {
+                const color = colorForCountry(view.country);
+                if (view.rows.length > 1) {
+                    const line = view.rows.map((r, i) => `${x(i)},${y(r.value)}`).join(' L ');
+                    parts.push(`<path d="M ${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`);
+                }
+                view.rows.forEach((row, i) => {
+                    parts.push(
+                        `<circle cx="${x(i)}" cy="${y(row.value)}" r="3" fill="${color}" stroke="#1a1a2e" stroke-width="1">` +
+                        `<title>${view.country} — year ${row.year}: ${Math.round(row.value)} influence, rank ${row.rank} of ${row.field}</title>` +
+                        `</circle>`
+                    );
+                });
+            });
+
             if (rows.length > 1) {
                 const line = rows.map((r, i) => `${x(i)},${y(r.value)}`).join(' L ');
                 parts.push(`<path d="M ${x(0)},${T + plotH} L ${line} L ${x(rows.length - 1)},${T + plotH} Z" fill="rgba(155,89,182,0.18)"/>`);
@@ -530,7 +650,7 @@
                 const radius = row.rank <= 3 ? 5 : 3.5;
                 parts.push(
                     `<circle cx="${x(i)}" cy="${y(row.value)}" r="${radius}" fill="${color}" stroke="#1a1a2e" stroke-width="1.5">` +
-                    `<title>Year ${row.year}: ${Math.round(row.value)} influence, rank ${row.rank} of ${row.field}</title>` +
+                    `<title>${primary.country} — year ${row.year}: ${Math.round(row.value)} influence, rank ${row.rank} of ${row.field}</title>` +
                     `</circle>`
                 );
             });
@@ -549,31 +669,106 @@
                 return n + suffix;
             };
 
-            const rowsHtml = view.rows.slice().reverse().map(row => {
-                const rankClass = row.rank <= 3 ? ` r${row.rank}` : '';
-                const medal = { 1: '🥇', 2: '🥈', 3: '🥉' }[row.rank] || '';
-                let delta;
-                if (row.change > 1e-9) {
-                    delta = `<span class="delta-up">▲ ${fmt(row.change)}</span>`;
-                } else if (row.change < -1e-9) {
-                    delta = `<span class="delta-down">▼ ${fmt(Math.abs(row.change))}</span>`;
-                } else {
-                    delta = '<span class="delta-flat">—</span>';
-                }
+            // The page's country first, then whatever is being compared
+            const views = [view].concat(
+                compareCountries
+                    .map(buildInfluenceView)
+                    .filter(Boolean)
+            );
 
-                return `
-                    <tr>
-                        <td><strong>${row.year}</strong></td>
-                        <td><span class="rank-pill${rankClass}">${row.rank}</span> ${medal}
-                            <span style="color:#7a7a8a;font-size:0.8rem;">of ${row.field}</span></td>
-                        <td class="num"><strong>${fmt(row.value)}</strong></td>
-                        <td class="num">${delta}</td>
-                        <td class="num" style="color:#9be89b;">${row.earned > 0 ? '+' + fmt(row.earned) : '—'}</td>
-                    </tr>`;
+            // If the country being sorted by is no longer shown, fall back to year
+            if (influenceSort.view >= views.length) {
+                influenceSort = { key: 'year', view: 0, dir: 'desc' };
+            }
+
+            // Header: one group of four columns per country
+            const groupHead = views.map((v, i) => {
+                const color = i === 0 ? '#b06fe0' : colorForCountry(v.country);
+                return `<th colspan="4" class="cmp-group${i > 0 ? ' cmp-sep' : ''}" style="color:${color}">
+                            <span class="legend-dot" style="background:${color}"></span>${escapeHtml(v.country)}
+                        </th>`;
             }).join('');
 
+            const sortClass = (key, viewIndex) => {
+                if (influenceSort.key !== key || influenceSort.view !== viewIndex) return 'sortable';
+                return `sortable ${influenceSort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc'}`;
+            };
+
+            const subHead = views.map((v, i) => `
+                <th class="${sortClass('rank', i)}${i > 0 ? ' cmp-sep' : ''}" data-key="rank" data-view="${i}">Rank</th>
+                <th class="num ${sortClass('value', i)}" data-key="value" data-view="${i}">Influence</th>
+                <th class="num ${sortClass('change', i)}" data-key="change" data-view="${i}">Change</th>
+                <th class="num ${sortClass('earned', i)}" data-key="earned" data-view="${i}">Earned</th>`).join('');
+
+            // Cycle order, driven by whichever column heading was last clicked
+            const order = view.rows.map((_, i) => i);
+            const sortView = views[influenceSort.view] || views[0];
+            const dir = influenceSort.dir === 'asc' ? 1 : -1;
+
+            order.sort((a, b) => {
+                if (influenceSort.key === 'year') {
+                    return (view.rows[a].year - view.rows[b].year) * dir;
+                }
+                const rowA = sortView.rows[a];
+                const rowB = sortView.rows[b];
+                if (!rowA || !rowB) return 0;
+                // Rank reads best smallest-first, so invert it
+                const flip = influenceSort.key === 'rank' ? -1 : 1;
+                const diff = (rowA[influenceSort.key] - rowB[influenceSort.key]) * dir * flip;
+                // Ties fall back to the most recent cycle first
+                return diff !== 0 ? diff : view.rows[b].year - view.rows[a].year;
+            });
+
+            // One row per cycle, with every country side by side
+            const rowsHtml = order.map(i => {
+                const year = view.rows[i].year;
+
+                const cells = views.map((v, vi) => {
+                    const row = v.rows[i];
+                    if (!row) {
+                        return `<td class="${vi > 0 ? 'cmp-sep ' : ''}cmp-none" colspan="4">—</td>`;
+                    }
+
+                    const rankClass = row.rank <= 3 ? ` r${row.rank}` : '';
+                    const medal = { 1: '🥇', 2: '🥈', 3: '🥉' }[row.rank] || '';
+                    let delta;
+                    if (row.change > 1e-9) {
+                        delta = `<span class="delta-up">▲ ${fmt(row.change)}</span>`;
+                    } else if (row.change < -1e-9) {
+                        delta = `<span class="delta-down">▼ ${fmt(Math.abs(row.change))}</span>`;
+                    } else {
+                        delta = '<span class="delta-flat">—</span>';
+                    }
+
+                    return `
+                        <td class="rank-cell${vi > 0 ? ' cmp-sep' : ''}"><span class="rank-pill${rankClass}">${row.rank}</span>${medal}
+                            <span class="of-field">of ${row.field}</span></td>
+                        <td class="num"><strong>${fmt(row.value)}</strong></td>
+                        <td class="num">${delta}</td>
+                        <td class="num" style="color:#9be89b;">${row.earned > 0 ? '+' + fmt(row.earned) : '—'}</td>`;
+                }).join('');
+
+                return `<tr><td><strong>${year}</strong></td>${cells}</tr>`;
+            }).join('');
+
+            // Country pickers - each excludes the page's country and the other pick
+            const timeline = getInfluenceTimeline();
+            const others = timeline.countries.filter(c => c !== country);
+            const slotSelect = slot => {
+                const chosen = compareCountries[slot] || '';
+                const taken = compareCountries[slot === 0 ? 1 : 0];
+                const options = others
+                    .filter(c => c !== taken)
+                    .map(c => `<option value="${escapeHtml(c)}"${c === chosen ? ' selected' : ''}>${escapeHtml(c)}</option>`)
+                    .join('');
+                return `<select class="cmp-select" data-slot="${slot}">
+                            <option value="">+ add a country…</option>
+                            ${options}
+                        </select>`;
+            };
+
             return `
-                <div class="section">
+                <div class="section" id="influenceSection">
                     <h2>📈 Influence</h2>
 
                     <div class="infl-headline">
@@ -620,18 +815,23 @@
                         </div>
                     </div>
 
-                    ${influenceChartSvg(view.rows)}
+                    ${influenceChartSvg(views)}
+
+                    <div class="cmp-bar">
+                        <span class="cmp-label">Compare year by year with up to two more countries:</span>
+                        ${slotSelect(0)}
+                        ${slotSelect(1)}
+                        ${compareCountries.length ? '<button type="button" class="cmp-clear">clear</button>' : ''}
+                    </div>
 
                     <div class="infl-table-wrap">
-                        <table class="infl-table">
+                        <table class="infl-table" style="min-width:${470 + (views.length - 1) * 370}px">
                             <thead>
                                 <tr>
-                                    <th>Year</th>
-                                    <th>Rank</th>
-                                    <th class="num">Influence</th>
-                                    <th class="num">Change</th>
-                                    <th class="num">Earned</th>
+                                    <th rowspan="2" class="${sortClass('year', 0)}" data-key="year" data-view="0">Year</th>
+                                    ${groupHead}
                                 </tr>
+                                <tr>${subHead}</tr>
                             </thead>
                             <tbody>${rowsHtml}</tbody>
                         </table>
@@ -643,6 +843,65 @@
                         <a href="influence.html">See the full model and weights →</a>
                     </p>
                 </div>`;
+        }
+
+        /**
+         * Swap just the influence section in place, so changing the
+         * comparison does not rebuild (and scroll away from) the whole page.
+         */
+        function refreshInfluenceSection(country) {
+            const section = document.getElementById('influenceSection');
+            if (!section) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = renderInfluenceSection(country);
+            const replacement = wrapper.firstElementChild;
+            if (!replacement) return;
+
+            section.replaceWith(replacement);
+            wireInfluenceCompare(country);
+        }
+
+        function wireInfluenceCompare(country) {
+            document.querySelectorAll('#influenceSection .cmp-select').forEach(select => {
+                select.onchange = () => {
+                    const slot = parseInt(select.dataset.slot, 10);
+                    const picked = select.value;
+
+                    // Keep the two slots distinct and gap-free
+                    const next = compareCountries.slice();
+                    if (picked) {
+                        next[slot] = picked;
+                    } else {
+                        next.splice(slot, 1);
+                    }
+                    compareCountries = next.filter((c, i) => c && next.indexOf(c) === i).slice(0, 2);
+
+                    refreshInfluenceSection(country);
+                };
+            });
+
+            const clear = document.querySelector('#influenceSection .cmp-clear');
+            if (clear) {
+                clear.onclick = () => {
+                    compareCountries = [];
+                    refreshInfluenceSection(country);
+                };
+            }
+
+            document.querySelectorAll('#influenceSection th.sortable').forEach(th => {
+                th.onclick = () => {
+                    const key = th.dataset.key;
+                    const viewIndex = parseInt(th.dataset.view, 10);
+
+                    if (influenceSort.key === key && influenceSort.view === viewIndex) {
+                        influenceSort.dir = influenceSort.dir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        influenceSort = { key: key, view: viewIndex, dir: 'desc' };
+                    }
+                    refreshInfluenceSection(country);
+                };
+            });
         }
 
         function render() {
@@ -1016,6 +1275,7 @@
             html += '</div></div>';
 
             content.innerHTML = html;
+            wireInfluenceCompare(country);
         }
 
         document.addEventListener('DOMContentLoaded', loadHistory);
