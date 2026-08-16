@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Influence Over Time - Election Calculator</title>
+    <title>Wing Influence Over Time - Election Calculator</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -306,12 +306,11 @@
 </head>
 <body>
     <div class="container">
-        <a href="history.html" class="back-link">← Back to History</a>
-        <a href="wing-influence.html" class="back-link" style="margin-left:20px;color:#ffd700;">By political wing →</a>
+        <a href="influence.html" class="back-link">← Country influence</a>
 
         <header>
-            <h1>Influence Over Time</h1>
-            <p class="subtitle">Who actually holds power, cycle by cycle — and how long it lasts</p>
+            <h1>Wing Influence Over Time</h1>
+            <p class="subtitle">The same influence model, tallied by political wing instead of by country</p>
         </header>
 
         <div id="content" style="display: none;">
@@ -322,11 +321,11 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="statCountries">0</div>
-                    <div class="stat-label">Countries Ranked</div>
+                    <div class="stat-label">Wings Ranked</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="statLeader">-</div>
-                    <div class="stat-label">Current Leader</div>
+                    <div class="stat-label">Leading Wing</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="statPeak">-</div>
@@ -336,27 +335,13 @@
 
             <div class="panel">
                 <h2>Influence Curve</h2>
-                <p class="hint">Each line is a country. Hover the chart to read every value for that cycle; click a legend chip to isolate or hide a country.</p>
+                <p class="hint">Each line is a political wing. Hover the chart to read every value for that cycle; click a legend chip to isolate a wing, double-click to hide it.</p>
 
                 <div class="controls">
-                    <label class="control">Show
-                        <select id="topN">
-                            <option value="5">top 5</option>
-                            <option value="10" selected>top 10</option>
-                            <option value="20">top 20</option>
-                            <option value="0">all countries</option>
-                        </select>
-                    </label>
-                    <label class="control">Ranked by
-                        <select id="rankBy">
-                            <option value="current" selected>influence now</option>
-                            <option value="peak">peak influence</option>
-                            <option value="total">total earned</option>
-                        </select>
-                    </label>
                     <label class="control">Decay per cycle
                         <select id="decay"></select>
                     </label>
+                    <span class="control" style="opacity:0.75">All five wings are always shown.</span>
                 </div>
 
                 <div class="chart-wrap" id="chartWrap">
@@ -369,15 +354,15 @@
 
             <div class="panel">
                 <h2>Standings</h2>
-                <p class="hint">Influence as of the most recent cycle, with the peak each country ever reached and the number of cycles it finished on top. Click any column heading to reorder.</p>
+                <p class="hint">Influence as of the most recent cycle, with the peak each wing ever reached and the number of cycles it finished on top. Click any column heading to reorder.</p>
                 <table>
                     <thead>
                         <tr>
                             <th class="rank">#</th>
-                            <th class="sortable" data-key="country">Country</th>
+                            <th class="sortable" data-key="country">Wing</th>
                             <th class="sortable num" data-key="current">Influence</th>
                             <th style="width: 18%;">Share</th>
-                            <th class="sortable num" data-key="lead" title="Election cycles this country finished on top of the influence table">Years in lead</th>
+                            <th class="sortable num" data-key="lead" title="Election cycles this wing finished on top of the influence table">Years in lead</th>
                             <th class="sortable num" data-key="peak">Peak</th>
                             <th class="sortable num" data-key="total">Total earned</th>
                         </tr>
@@ -388,7 +373,7 @@
 
             <div class="panel">
                 <h2>Where the points came from</h2>
-                <p class="hint">Every role scored in a single cycle. This is the raw input to the curve above — pick a year to inspect it.</p>
+                <p class="hint">Every role scored in a single cycle, grouped by the wing that held it. This is the raw input to the curve above — pick a year to inspect it.</p>
                 <div class="controls">
                     <label class="control">Cycle
                         <select id="yearSelect"></select>
@@ -399,7 +384,7 @@
 
             <div class="panel">
                 <details class="docs" id="docs">
-                    <summary>How influence is calculated</summary>
+                    <summary>How wing influence is calculated</summary>
                     <div class="docs-body" id="docsBody"></div>
                 </details>
             </div>
@@ -407,7 +392,7 @@
 
         <div class="empty" id="empty">
             <h2>No history yet</h2>
-            <p>Save at least one government from the calculator and the influence curve will appear here.</p>
+            <p>Save at least one government from the calculator and the wing influence curve will appear here.</p>
             <p style="margin-top: 18px;"><a href="index.html" class="back-link">Go to the Election Calculator →</a></p>
         </div>
     </div>
@@ -432,19 +417,16 @@
             }
         }
 
-        /** Stable, well-spread colour per country using the golden angle. */
-        const colorCache = {};
-        function colorFor(country) {
-            if (colorCache[country]) return colorCache[country];
-            let hash = 0;
-            for (let i = 0; i < country.length; i++) {
-                hash = (hash * 31 + country.charCodeAt(i)) >>> 0;
-            }
-            const hue = (hash * 137.508) % 360;
-            const sat = 62 + (hash % 18);
-            const light = 55 + (hash % 12);
-            colorCache[country] = `hsl(${hue.toFixed(1)}, ${sat}%, ${light}%)`;
-            return colorCache[country];
+        /** The wing palette used throughout the app, left to right. */
+        const WING_COLORS = {
+            'Hard Left Wing':  '#96172b',
+            'Left Wing':       '#ef5350',
+            'Middle':          '#f39c12',
+            'Right Wing':      '#42a5f5',
+            'Hard Right Wing': '#283593'
+        };
+        function colorFor(wing) {
+            return WING_COLORS[wing] || '#9b59b6';
         }
 
         function fmt(value) {
@@ -457,27 +439,16 @@
             return div.innerHTML;
         }
 
-        /** Countries ordered by the currently selected ranking metric. */
+        /** Wings ordered by their influence in the most recent cycle. */
         function rankedCountries() {
-            const mode = document.getElementById('rankBy').value;
             const lastIndex = timeline.years.length - 1;
-
-            return timeline.countries.slice().sort((a, b) => {
-                if (mode === 'peak') {
-                    return Math.max(...timeline.series[b]) - Math.max(...timeline.series[a]);
-                }
-                if (mode === 'total') {
-                    const sum = arr => arr.reduce((s, v) => s + v, 0);
-                    return sum(timeline.earned[b]) - sum(timeline.earned[a]);
-                }
-                return timeline.series[b][lastIndex] - timeline.series[a][lastIndex];
-            });
+            return timeline.countries.slice()
+                .sort((a, b) => timeline.series[b][lastIndex] - timeline.series[a][lastIndex]);
         }
 
+        /** There are only five wings, so every one is always drawn. */
         function selectedCountries() {
-            const topN = parseInt(document.getElementById('topN').value, 10);
-            const ranked = rankedCountries();
-            return topN > 0 ? ranked.slice(0, topN) : ranked;
+            return timeline.countries.slice();
         }
 
         // ---------------------------------------------------------------
@@ -720,7 +691,7 @@
                         <td>
                             <span class="country-cell">
                                 <span class="legend-swatch" style="background:${color}"></span>
-                                <a href="country-detail.html?country=${encodeURIComponent(row.country)}">${escapeHtml(row.country)}</a>
+                                <strong>${escapeHtml(row.country)}</strong>
                             </span>
                         </td>
                         <td class="num"><strong>${fmt(row.current)}</strong></td>
@@ -831,13 +802,14 @@
                 .join('');
 
             document.getElementById('docsBody').innerHTML = `
-                <p>Influence is never stored. It is recomputed from the saved history every time this page loads, so editing or deleting a saved government immediately changes the curve.</p>
+                <p>This is the identical model used for <a href="influence.html">country influence</a>, with one difference: every point is credited to the political wing of the party that held the role, rather than to its country. The weights, the multipliers and the decay are all the same, so the two pages always total to the same number of points each cycle.</p>
+                <p>Nothing is stored. It is recomputed from the saved history every time this page loads, so editing or deleting a saved government immediately changes the curve.</p>
 
                 <h3>The two rules</h3>
-                <p><strong>1. Earning.</strong> In each election cycle a country collects points for every role it holds that cycle.</p>
+                <p><strong>1. Earning.</strong> In each election cycle a wing collects points for every role its parties hold that cycle.</p>
                 <p><strong>2. Fading.</strong> Those points keep counting afterwards, shrinking by the decay factor once per cycle.</p>
-                <div class="formula">influence(country, Y) = Σ  score(country, y) × ${decay}<sup>(Y − y)</sup>&nbsp;&nbsp;for every cycle y ≤ Y</div>
-                <p>At a decay of <strong>${decay}</strong>, influence halves about every <strong>${halfLife.toFixed(1)} cycles</strong> (${(halfLife * 4).toFixed(0)} in-game years) if a country wins nothing further. A decay of 1.00 turns the curve into a running career total.</p>
+                <div class="formula">influence(wing, Y) = Σ  score(wing, y) × ${decay}<sup>(Y − y)</sup>&nbsp;&nbsp;for every cycle y ≤ Y</div>
+                <p>At a decay of <strong>${decay}</strong>, influence halves about every <strong>${halfLife.toFixed(1)} cycles</strong> (${(halfLife * 4).toFixed(0)} in-game years) if a wing wins nothing further. A decay of 1.00 turns the curve into a running career total.</p>
 
                 <h3>Points per role, per cycle</h3>
                 <table>
@@ -854,7 +826,7 @@
                 <div class="mult-list">${committeeChips}</div>
 
                 <h3>Worked example</h3>
-                <p>A country leading a majority government with 40% of parliament, holding five cabinet seats (Prime Minister plus Finance, Foreign Affairs, Interior and Defense) and chairing Budget &amp; Finance:</p>
+                <p>A wing leading a majority government with 40% of parliament, holding five cabinet seats (Prime Minister plus Finance, Foreign Affairs, Interior and Defense) and chairing Budget &amp; Finance:</p>
                 <div class="formula">Prime Minister            100.0
 Majority government        15.0
 In coalition               20.0
@@ -871,7 +843,7 @@ earned this cycle         244.6
 next cycle, if it wins nothing:  244.6 × ${decay} = ${(244.6 * decay).toFixed(1)}</div>
 
                 <h3>What is deliberately left out</h3>
-                <p>The election analysis figures (Gallagher index, wasted votes, effective parties) describe the health of the whole election rather than any one country, so they earn nobody points. Committee chairs are matched to a country through the party name recorded on the chair, which is the only link stored with a committee.</p>
+                <p>The election analysis figures (Gallagher index, wasted votes, effective parties) describe the health of the whole election rather than any one wing, so they earn nobody points. A wing collects from every party that holds it, so a wing shared by several parties accumulates all of their roles.</p>
             `;
         }
 
@@ -887,7 +859,7 @@ next cycle, if it wins nothing:  244.6 × ${decay} = ${(244.6 * decay).toFixed(1
 
         function recompute() {
             const decay = parseFloat(document.getElementById('decay').value);
-            timeline = InfluenceModel.computeTimeline(history, { decay: decay });
+            timeline = InfluenceModel.computeTimeline(history, { decay: decay, dimension: 'wing' });
             leadCounts = computeLeadCounts();
 
             visible = new Set(selectedCountries());
@@ -950,16 +922,6 @@ next cycle, if it wins nothing:  244.6 × ${decay} = ${(244.6 * decay).toFixed(1
                 .join('');
             yearSelect.value = String(sorted.length - 1);
 
-            document.getElementById('topN').onchange = () => {
-                visible = new Set(selectedCountries());
-                isolated = null;
-                render();
-            };
-            document.getElementById('rankBy').onchange = () => {
-                visible = new Set(selectedCountries());
-                isolated = null;
-                render();
-            };
             decaySelect.onchange = recompute;
             yearSelect.onchange = drawBreakdown;
             initStandingsSorting();

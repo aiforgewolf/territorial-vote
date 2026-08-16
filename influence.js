@@ -107,18 +107,58 @@ const InfluenceModel = (function () {
         'Environment', 'Transport', 'Agriculture', 'Culture', 'Energy'
     ];
 
-    /** Resolve the real country behind a party name within one history entry. */
-    function partyCountry(entry, partyName) {
+    /** The five political positions, ordered left to right. */
+    const WINGS = ['Hard Left Wing', 'Left Wing', 'Middle', 'Right Wing', 'Hard Right Wing'];
+
+    /** Look up a party record by name within one history entry. */
+    function findParty(entry, partyName) {
         if (!partyName || !entry.qualifiedParties) return null;
-        const party = entry.qualifiedParties.find(p => p.name === partyName);
-        return party && party.realCountry ? party.realCountry : null;
+        return entry.qualifiedParties.find(p => p.name === partyName) || null;
     }
 
-    /** Resolve a royal's country, falling back to a party lookup for old records. */
-    function royalCountry(entry, royal) {
-        if (!royal) return null;
-        if (royal.realCountry) return royal.realCountry;
-        return partyCountry(entry, royal.country);
+    /**
+     * The same scoring can be tallied per country or per political wing.
+     * A dimension just says how to name the holder of a role; everything
+     * else about the model is identical.
+     */
+    const DIMENSIONS = {
+        country: {
+            key: 'country',
+            label: 'country',
+            ofParty: party => (party && party.realCountry) || null,
+            ofCommittee: (entry, committee) => {
+                const party = findParty(entry, committee.partyName);
+                return (party && party.realCountry) || null;
+            },
+            ofRoyal: (entry, royal) => {
+                if (!royal) return null;
+                if (royal.realCountry) return royal.realCountry;
+                const party = findParty(entry, royal.country);
+                return (party && party.realCountry) || null;
+            },
+            order: null
+        },
+        wing: {
+            key: 'wing',
+            label: 'political wing',
+            ofParty: party => (party && party.position) || null,
+            ofCommittee: (entry, committee) => {
+                if (committee.partyPosition) return committee.partyPosition;
+                const party = findParty(entry, committee.partyName);
+                return (party && party.position) || null;
+            },
+            ofRoyal: (entry, royal) => {
+                if (!royal) return null;
+                if (royal.position) return royal.position;
+                const party = findParty(entry, royal.country);
+                return (party && party.position) || null;
+            },
+            order: WINGS
+        }
+    };
+
+    function resolveDimension(name) {
+        return DIMENSIONS[name] || DIMENSIONS.country;
     }
 
     /**
@@ -128,15 +168,16 @@ const InfluenceModel = (function () {
      * The itemised breakdown is what the page shows when you drill into a
      * year, so every point on the graph can be traced back to a role.
      */
-    function scoreYear(entry) {
+    function scoreYear(entry, dimensionName) {
+        const dim = resolveDimension(dimensionName);
         const scores = {};
         const seats = entry.parliamentSeats || 200;
 
-        function award(country, label, points, detail) {
-            if (!country || !points) return;
-            if (!scores[country]) scores[country] = { total: 0, items: [] };
-            scores[country].total += points;
-            scores[country].items.push({
+        function award(holder, label, points, detail) {
+            if (!holder || !points) return;
+            if (!scores[holder]) scores[holder] = { total: 0, items: [] };
+            scores[holder].total += points;
+            scores[holder].items.push({
                 label: label,
                 points: points,
                 detail: detail || null
@@ -145,11 +186,12 @@ const InfluenceModel = (function () {
 
         // --- Parliament: presence and raw size -----------------------------
         (entry.qualifiedParties || []).forEach(party => {
-            if (!party.realCountry) return;
-            award(party.realCountry, 'In parliament', WEIGHTS.qualified);
+            const holder = dim.ofParty(party);
+            if (!holder) return;
+            award(holder, 'In parliament', WEIGHTS.qualified);
             const share = seats > 0 ? (party.seats || 0) / seats : 0;
             award(
-                party.realCountry,
+                holder,
                 'Seat share',
                 WEIGHTS.seatShare * share,
                 `${party.seats || 0} of ${seats} seats (${(share * 100).toFixed(1)}%)`
@@ -160,17 +202,19 @@ const InfluenceModel = (function () {
         const hasMajority = !!entry.hasMajority;
 
         (entry.coalitionParties || []).forEach(party => {
-            if (!party.realCountry) return;
-            award(party.realCountry, 'In coalition', WEIGHTS.coalitionMember);
+            const holder = dim.ofParty(party);
+            if (!holder) return;
+            award(holder, 'In coalition', WEIGHTS.coalitionMember);
             if (hasMajority) {
-                award(party.realCountry, 'Majority coalition', WEIGHTS.coalitionMajorityBonus);
+                award(holder, 'Majority coalition', WEIGHTS.coalitionMajorityBonus);
             }
         });
 
-        if (entry.primeMinister && entry.primeMinister.realCountry) {
-            award(entry.primeMinister.realCountry, 'Prime Minister', WEIGHTS.primeMinister);
+        const pmHolder = dim.ofParty(entry.primeMinister);
+        if (pmHolder) {
+            award(pmHolder, 'Prime Minister', WEIGHTS.primeMinister);
             if (hasMajority) {
-                award(entry.primeMinister.realCountry, 'Majority government', WEIGHTS.majorityPmBonus);
+                award(pmHolder, 'Majority government', WEIGHTS.majorityPmBonus);
             }
         }
 
@@ -190,7 +234,7 @@ const InfluenceModel = (function () {
                     const title = MINISTER_TITLES[titleIndex];
                     const multiplier = PORTFOLIO_MULTIPLIERS[title] || 1;
                     award(
-                        party.realCountry,
+                        dim.ofParty(party),
                         `Minister of ${title}`,
                         WEIGHTS.minister * multiplier,
                         multiplier !== 1 ? `great office (x${multiplier})` : null
@@ -202,10 +246,10 @@ const InfluenceModel = (function () {
 
         // --- Committees ----------------------------------------------------
         (entry.committees || []).forEach(committee => {
-            const country = partyCountry(entry, committee.partyName);
+            const holder = dim.ofCommittee(entry, committee);
             const multiplier = COMMITTEE_MULTIPLIERS[committee.committeeName] || 1;
             award(
-                country,
+                holder,
                 `Chair: ${committee.committeeName}`,
                 WEIGHTS.committee * multiplier,
                 multiplier !== 1 ? `key committee (x${multiplier})` : null
@@ -213,13 +257,14 @@ const InfluenceModel = (function () {
         });
 
         // --- Opposition ----------------------------------------------------
-        if (entry.oppositionLeader && entry.oppositionLeader.realCountry) {
-            award(entry.oppositionLeader.realCountry, 'Opposition Leader', WEIGHTS.oppositionLeader);
+        const oppositionHolder = dim.ofParty(entry.oppositionLeader);
+        if (oppositionHolder) {
+            award(oppositionHolder, 'Opposition Leader', WEIGHTS.oppositionLeader);
         }
 
         // --- Crown ---------------------------------------------------------
-        award(royalCountry(entry, entry.king), 'King', WEIGHTS.king);
-        award(royalCountry(entry, entry.queen), 'Queen', WEIGHTS.queen);
+        award(dim.ofRoyal(entry, entry.king), 'King', WEIGHTS.king);
+        award(dim.ofRoyal(entry, entry.queen), 'Queen', WEIGHTS.queen);
 
         return scores;
     }
@@ -243,13 +288,20 @@ const InfluenceModel = (function () {
         const opts = options || {};
         const decay = typeof opts.decay === 'number' ? opts.decay : DECAY;
 
+        const dim = resolveDimension(opts.dimension);
+
         const entries = (history || []).slice().sort((a, b) => (a.year || 0) - (b.year || 0));
         const years = entries.map(e => e.year || 0);
-        const yearScores = entries.map(scoreYear);
+        const yearScores = entries.map(entry => scoreYear(entry, dim.key));
 
         const countrySet = new Set();
         yearScores.forEach(scores => Object.keys(scores).forEach(c => countrySet.add(c)));
-        const countries = Array.from(countrySet).sort();
+
+        // Wings keep their left-to-right order; countries sort alphabetically.
+        const countries = dim.order
+            ? dim.order.filter(name => countrySet.has(name))
+                .concat(Array.from(countrySet).filter(n => dim.order.indexOf(n) === -1).sort())
+            : Array.from(countrySet).sort();
 
         const series = {};
         const earned = {};
@@ -278,7 +330,8 @@ const InfluenceModel = (function () {
             series: series,
             earned: earned,
             yearScores: yearScores,
-            decay: decay
+            decay: decay,
+            dimension: dim.key
         };
     }
 
@@ -308,6 +361,7 @@ const InfluenceModel = (function () {
         PORTFOLIO_MULTIPLIERS: PORTFOLIO_MULTIPLIERS,
         COMMITTEE_MULTIPLIERS: COMMITTEE_MULTIPLIERS,
         MINISTER_TITLES: MINISTER_TITLES,
+        WINGS: WINGS,
         scoreYear: scoreYear,
         computeTimeline: computeTimeline,
         describe: describe
