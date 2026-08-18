@@ -207,6 +207,14 @@
         }
         table.infl-table tr:hover { background: rgba(255, 255, 255, 0.04); }
         table.infl-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+        table.infl-table tfoot tr.avg-row td {
+            border-top: 2px solid rgba(255, 255, 255, 0.18);
+            border-bottom: none;
+            background: rgba(255, 255, 255, 0.035);
+            color: #c0c0c0;
+        }
+        table.infl-table tfoot tr.avg-row td strong { color: #ffd700; }
+
         table.infl-table td.rank-cell { white-space: nowrap; }
         table.infl-table td.rank-cell .of-field { color: #7a7a8a; font-size: 0.78rem; }
 
@@ -566,12 +574,18 @@
 
             const last = rows[rows.length - 1];
             const peak = rows.reduce((best, r) => (r.value > best.value ? r : best), rows[0]);
+            const mean = list => list.reduce((sum, v) => sum + v, 0) / (list.length || 1);
 
             return {
                 country: country,
                 rows: rows,
                 current: last,
                 peak: peak,
+                // Averaged across every cycle tracked, so a country that peaked
+                // once reads differently from one that held steady throughout.
+                average: mean(rows.map(r => r.value)),
+                averageRank: mean(rows.map(r => r.rank)),
+                averageEarned: mean(rows.map(r => r.earned)),
                 gold:   rows.filter(r => r.rank === 1).length,
                 silver: rows.filter(r => r.rank === 2).length,
                 bronze: rows.filter(r => r.rank === 3).length,
@@ -642,6 +656,11 @@
                 const line = rows.map((r, i) => `${x(i)},${y(r.value)}`).join(' L ');
                 parts.push(`<path d="M ${x(0)},${T + plotH} L ${line} L ${x(rows.length - 1)},${T + plotH} Z" fill="rgba(155,89,182,0.18)"/>`);
                 parts.push(`<path d="M ${line}" fill="none" stroke="#b06fe0" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+
+                // The country's own average, so peaks and troughs read against it
+                const avgY = y(primary.average);
+                parts.push(`<line x1="${L}" y1="${avgY}" x2="${L + plotW}" y2="${avgY}" stroke="#b06fe0" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.75"><title>Average ${Math.round(primary.average)}</title></line>`);
+                parts.push(`<text class="a-text" x="${L + plotW - 4}" y="${avgY - 6}" text-anchor="end" fill="#c79aea">avg ${Math.round(primary.average)}</text>`);
             }
 
             const medalColor = { 1: '#ffd700', 2: '#d8d8d8', 3: '#cd7f32' };
@@ -782,13 +801,18 @@
                             <div class="ih-value">${ordinal(view.current.rank)}</div>
                             <div class="ih-sub">of ${view.current.field} countries</div>
                         </div>
+                        <div class="infl-hero">
+                            <div class="ih-label">Average influence</div>
+                            <div class="ih-value">${fmt(view.average)}</div>
+                            <div class="ih-sub">across ${view.rows.length} cycles · avg rank ${view.averageRank.toFixed(1)}</div>
+                        </div>
                         <div class="infl-mini">
                             <div class="im-value">${fmt(view.peak.value)}</div>
                             <div class="im-label">Peak (year ${view.peak.year})</div>
                         </div>
                         <div class="infl-mini">
-                            <div class="im-value">${view.rows.length}</div>
-                            <div class="im-label">Cycles tracked</div>
+                            <div class="im-value">${fmt(view.averageEarned)}</div>
+                            <div class="im-label">Avg earned / cycle</div>
                         </div>
                     </div>
 
@@ -834,6 +858,16 @@
                                 <tr>${subHead}</tr>
                             </thead>
                             <tbody>${rowsHtml}</tbody>
+                            <tfoot>
+                                <tr class="avg-row">
+                                    <td><strong>Avg</strong></td>
+                                    ${views.map((v, vi) => `
+                                        <td class="rank-cell${vi > 0 ? ' cmp-sep' : ''}">${v.averageRank.toFixed(1)}</td>
+                                        <td class="num"><strong>${fmt(v.average)}</strong></td>
+                                        <td class="num">—</td>
+                                        <td class="num" style="color:#9be89b;">+${fmt(v.averageEarned)}</td>`).join('')}
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
 
