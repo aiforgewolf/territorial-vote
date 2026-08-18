@@ -187,6 +187,11 @@
 
         .rank { font-weight: 700; color: #ffd700; width: 44px; }
 
+        .medal-gold   { color: #ffd700; font-weight: 700; }
+        .medal-silver { color: #d8d8d8; font-weight: 700; }
+        .medal-bronze { color: #cd7f32; font-weight: 700; }
+        .medal-none   { color: #5a5a6a; }
+
         .lead-count { font-weight: 600; }
         .lead-count.none { color: #6a6a7a; font-weight: 400; }
         .crown { color: #ffd700; }
@@ -372,6 +377,25 @@
             </div>
 
             <div class="panel">
+                <h2>Medal Table</h2>
+                <p class="hint">Every cycle awards a gold, a silver and a bronze for the top three places in the influence table. Ranked by weighted points — gold 3, silver 2, bronze 1 — and no place is ever shared.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="rank">#</th>
+                            <th class="sortable" data-mkey="country">Wing</th>
+                            <th class="sortable num" data-mkey="gold">🥇 Gold</th>
+                            <th class="sortable num" data-mkey="silver">🥈 Silver</th>
+                            <th class="sortable num" data-mkey="bronze">🥉 Bronze</th>
+                            <th class="sortable num" data-mkey="total">Medals</th>
+                            <th class="sortable num" data-mkey="points" title="gold x3 + silver x2 + bronze x1">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="medalBody"></tbody>
+                </table>
+            </div>
+
+            <div class="panel">
                 <h2>Where the points came from</h2>
                 <p class="hint">Every role scored in a single cycle, grouped by the wing that held it. This is the raw input to the curve above — pick a year to inspect it.</p>
                 <div class="controls">
@@ -405,7 +429,8 @@
         let timeline = null;
         let visible = new Set();   // countries currently drawn
         let isolated = null;       // country pinned via legend click
-        let leadCounts = {};       // country -> cycles finished on top
+        let medals = {};           // country -> medal tally per place
+        let medalSort = { key: null, dir: 'desc' };   // null = the ranking order
         let standingsSort = { key: 'current', dir: 'desc' };
 
         function loadHistory() {
@@ -612,30 +637,44 @@
         // ---------------------------------------------------------------
 
         /**
-         * Count the cycles each country finished on top of the influence
-         * table. Exact ties share the lead; a cycle where nobody scored
-         * anything has no leader at all.
+         * Award a medal for each of the top three places in every cycle, and
+         * tally them up. Exact ties share a place, and a cycle where nobody
+         * scored anything awards nothing at all.
+         *
+         * Gold is the same thing as finishing a cycle on top, so the
+         * standings' "years in lead" column reads straight off this tally.
          */
-        function computeLeadCounts() {
-            const counts = {};
-            timeline.countries.forEach(c => { counts[c] = 0; });
-
-            timeline.years.forEach((_, i) => {
-                let best = 0;
-                let leaders = [];
-                timeline.countries.forEach(country => {
-                    const value = timeline.series[country][i];
-                    if (value > best + 1e-9) {
-                        best = value;
-                        leaders = [country];
-                    } else if (value > 0 && Math.abs(value - best) < 1e-9) {
-                        leaders.push(country);
-                    }
-                });
-                if (best > 0) leaders.forEach(c => { counts[c]++; });
+        function computeMedals() {
+            const tally = {};
+            timeline.countries.forEach(c => {
+                tally[c] = { gold: 0, silver: 0, bronze: 0, total: 0, points: 0, latestYear: null };
             });
 
-            return counts;
+            timeline.years.forEach((year, i) => {
+                timeline.countries.forEach(country => {
+                    const value = timeline.series[country][i];
+                    if (value <= 0) return;
+
+                    // Competition placing: one plus however many are strictly ahead
+                    const place = 1 + timeline.countries
+                        .filter(c => timeline.series[c][i] > value + 1e-9).length;
+                    if (place > 3) return;
+
+                    const row = tally[country];
+                    if (place === 1) row.gold++;
+                    else if (place === 2) row.silver++;
+                    else row.bronze++;
+                    row.latestYear = year;   // years ascend, so the last write is the latest
+                });
+            });
+
+            Object.keys(tally).forEach(c => {
+                const row = tally[c];
+                row.total = row.gold + row.silver + row.bronze;
+                row.points = row.gold * 3 + row.silver * 2 + row.bronze;
+            });
+
+            return tally;
         }
 
         /** One row of the standings table, before sorting. */
@@ -651,7 +690,7 @@
                     peak: peak,
                     peakYear: timeline.years[series.indexOf(peak)],
                     total: timeline.earned[country].reduce((s, v) => s + v, 0),
-                    lead: leadCounts[country] || 0
+                    lead: (medals[country] && medals[country].gold) || 0
                 };
             });
         }
@@ -725,6 +764,86 @@
                         standingsSort.dir = key === 'country' ? 'asc' : 'desc';
                     }
                     drawStandings();
+                };
+            });
+        }
+
+        // ---------------------------------------------------------------
+        // Medal table
+        // ---------------------------------------------------------------
+
+        /**
+         * Ranked so that no two countrys ever share a place: weighted points
+         * first, then more gold, more silver, more bronze, then whoever
+         * medalled most recently, and finally the name.
+         */
+        function medalOrder() {
+            const rows = timeline.countries
+                .map(c => Object.assign({ country: c }, medals[c]))
+                .filter(r => r.total > 0);
+
+            if (medalSort.key) {
+                const dir = medalSort.dir === 'asc' ? 1 : -1;
+                return rows.sort((a, b) => {
+                    if (medalSort.key === 'country') return a.country.localeCompare(b.country) * dir;
+                    const diff = (a[medalSort.key] - b[medalSort.key]) * dir;
+                    return diff !== 0 ? diff : a.country.localeCompare(b.country);
+                });
+            }
+
+            return rows.sort((a, b) =>
+                b.points - a.points ||
+                b.gold - a.gold ||
+                b.silver - a.silver ||
+                b.bronze - a.bronze ||
+                (b.latestYear || 0) - (a.latestYear || 0) ||
+                a.country.localeCompare(b.country));
+        }
+
+        function drawMedals() {
+            const body = document.getElementById('medalBody');
+            const rows = medalOrder();
+
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="7" style="color:#8a8a9a">No medals awarded yet.</td></tr>';
+                return;
+            }
+
+            body.innerHTML = rows.map((row, i) => `
+                <tr>
+                    <td class="rank">${i + 1}</td>
+                    <td>
+                        <span class="country-cell">
+                            <span class="legend-swatch" style="background:${colorFor(row.country)}"></span>
+                            <strong>${escapeHtml(row.country)}</strong>
+                        </span>
+                    </td>
+                    <td class="num">${row.gold   ? `<span class="medal-gold">${row.gold}</span>`     : '<span class="medal-none">—</span>'}</td>
+                    <td class="num">${row.silver ? `<span class="medal-silver">${row.silver}</span>` : '<span class="medal-none">—</span>'}</td>
+                    <td class="num">${row.bronze ? `<span class="medal-bronze">${row.bronze}</span>` : '<span class="medal-none">—</span>'}</td>
+                    <td class="num">${row.total}</td>
+                    <td class="num"><strong style="color:#ffd700">${row.points}</strong></td>
+                </tr>`).join('');
+
+            document.querySelectorAll('th.sortable[data-mkey]').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (th.dataset.mkey === medalSort.key) {
+                    th.classList.add(medalSort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                }
+            });
+        }
+
+        function initMedalSorting() {
+            document.querySelectorAll('th.sortable[data-mkey]').forEach(th => {
+                th.onclick = () => {
+                    const key = th.dataset.mkey;
+                    if (medalSort.key === key) {
+                        medalSort.dir = medalSort.dir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        medalSort.key = key;
+                        medalSort.dir = key === 'country' ? 'asc' : 'desc';
+                    }
+                    drawMedals();
                 };
             });
         }
@@ -854,13 +973,14 @@ next cycle, if it wins nothing:  244.6 × ${decay} = ${(244.6 * decay).toFixed(1
             drawChart(countries);
             drawLegend(countries);
             drawStandings();
+            drawMedals();
             drawBreakdown();
         }
 
         function recompute() {
             const decay = parseFloat(document.getElementById('decay').value);
             timeline = InfluenceModel.computeTimeline(history, { decay: decay, dimension: 'wing' });
-            leadCounts = computeLeadCounts();
+            medals = computeMedals();
 
             visible = new Set(selectedCountries());
             isolated = null;
@@ -925,6 +1045,7 @@ next cycle, if it wins nothing:  244.6 × ${decay} = ${(244.6 * decay).toFixed(1
             decaySelect.onchange = recompute;
             yearSelect.onchange = drawBreakdown;
             initStandingsSorting();
+            initMedalSorting();
             window.addEventListener('resize', () => drawChart(selectedCountries()));
 
             recompute();
